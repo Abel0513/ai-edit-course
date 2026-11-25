@@ -1,0 +1,1850 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 自動剪輯實戰｜用 ChatGPT／Claude 做美髮短影音</title>
+<style>
+/* =========================================================
+   樣式（外觀）。一般改內容不用動這裡。
+   ========================================================= */
+:root{
+  --bg:#f1f5f9; --card:#fff; --navy:#1b2f5e; --navy2:#253f7a; --teal:#0e8f7e; --teal-bg:#e6f5f2;
+  --rose:#b5476b; --rose-bg:#fbeaf0; --amber:#c27c0e; --amber-bg:#fdf3e1; --red:#c0392b; --red-bg:#fdecea;
+  --green:#1f8a4c; --green-bg:#e7f6ec; --text:#334155; --muted:#64748b; --line:#e2e8f0; --soft:#f8fafc;
+  --dark:#14213d; --radius:14px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Noto Sans TC","Microsoft JhengHei","Heiti TC",sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Noto Sans Mono CJK TC",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--navy)}
+button{font-family:inherit;font-size:inherit;color:inherit}
+h1,h2,h3,h4{color:var(--navy);line-height:1.35;margin:0}
+p{margin:.5em 0}
+code,pre{font-family:var(--mono)}
+
+/* ---------- 左側欄 ---------- */
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:230px;background:#fff;border-right:1px solid var(--line);overflow-y:auto;z-index:40;padding:18px 12px 30px}
+.sb-title{font-size:17px;font-weight:800;color:var(--navy);padding:0 6px}
+.sb-sub{font-size:12px;color:var(--muted);padding:0 6px;margin-top:2px}
+.sb-prog{margin:12px 6px 4px;height:6px;background:#e9eef5;border-radius:99px;overflow:hidden}
+.sb-prog>i{display:block;height:100%;background:var(--teal);border-radius:99px;transition:width .3s}
+.sb-prog-t{font-size:12px;color:var(--muted);padding:0 6px 12px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.sb-group{font-size:11.5px;font-weight:800;color:var(--teal);padding:10px 8px 4px;letter-spacing:.05em}
+.sb-link{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;font-size:13.5px;color:var(--text);text-decoration:none;border-left:3px solid transparent}
+.sb-link:hover{background:#f1f5f9}
+.sb-link.active{background:var(--teal-bg);border-left-color:var(--teal);font-weight:700;color:var(--navy)}
+.sb-link .no{width:16px;color:var(--muted);font-size:12px;text-align:center;flex:none}
+.sb-link .nm{flex:1;min-width:0}
+.sb-link .mins{color:var(--muted);font-size:12px;font-weight:400}
+.sb-link .pc{font-size:11.5px;color:var(--amber);font-weight:700}
+.sb-link .pc.ok{color:var(--teal)}
+
+/* ---------- 上方工具列 ---------- */
+.main{margin-left:230px;min-height:100vh}
+.toolbar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:8px 18px;flex-wrap:wrap}
+.crumb{font-size:13px;color:var(--muted);flex:1;min-width:120px}
+.tgroup{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+.seg button{border:0;background:transparent;padding:5px 11px;font-size:12.5px;cursor:pointer;color:var(--text)}
+.seg button.on{background:var(--navy);color:#fff;font-weight:700}
+.navbtn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:5px 11px;font-size:12.5px;cursor:pointer}
+.navbtn.primary{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:700}
+.navbtn:disabled{opacity:.45;cursor:default}
+.navbtn.primary:disabled{background:#94a3b8;border-color:#94a3b8}
+.menubtn{display:none;border:1px solid var(--line);background:#fff;border-radius:9px;padding:5px 10px;font-size:13px;cursor:pointer}
+.overlay{display:none}
+
+/* ---------- 主內容卡片 ---------- */
+.content{padding:22px 18px 80px}
+.lesson{max-width:780px;margin:0 auto;background:var(--card);border-radius:var(--radius);box-shadow:0 1px 3px rgba(15,23,42,.06),0 4px 14px rgba(15,23,42,.04);border:1px solid #e8edf3;padding:28px 30px 30px}
+.lesson.bare{background:transparent;box-shadow:none;border:0;padding:0}
+.unit-tag{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.pill-navy{background:var(--navy);color:#fff;border-radius:6px;padding:1px 8px;font-size:11.5px;font-weight:700}
+.lesson h1{font-size:28px;font-weight:800;margin:8px 0 6px}
+.lead{color:var(--text);margin:4px 0 8px}
+.reqs{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.req{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:3px 10px;color:var(--muted);background:#fff}
+.req.ok{background:var(--green-bg);border-color:#b6e2c6;color:var(--green)}
+.sec{margin-top:26px;padding-top:4px}
+.sec+.sec{border-top:1px solid var(--line);padding-top:22px}
+.sec>h2{font-size:21px;font-weight:800;display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.secno{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:6px;background:var(--rose);color:#fff;font-size:12.5px;font-weight:800;flex:none}
+.small{font-size:12.5px;color:var(--muted)}
+.muted{color:var(--muted)}
+.box{border:1px solid var(--line);border-radius:12px;background:#fff;margin:14px 0;overflow:hidden}
+.box-h{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f4f7fb;border-bottom:1px solid var(--line);font-weight:800;color:var(--navy);font-size:14px}
+.box-h .sp{flex:1}
+.box-h .stat{font-weight:400;font-size:12px;color:var(--muted)}
+.box-b{padding:14px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 12px;font-size:13px;cursor:pointer;text-decoration:none;color:var(--text);line-height:1.5}
+.btn:hover{border-color:#cbd5e1}
+.btn.sm{padding:3px 9px;font-size:12px}
+.btn.navy{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700}
+.btn.teal{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:700}
+.btn.ghost{background:transparent;border-color:rgba(255,255,255,.5);color:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:99px;padding:4px 12px;font-size:13px;cursor:pointer;line-height:1.5}
+.chip:hover{border-color:#cbd5e1}
+.chip.on{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700}
+.chip.rose.on{background:var(--rose);border-color:var(--rose)}
+.callout{border-left:4px solid var(--teal);background:var(--teal-bg);border-radius:8px;padding:12px 16px;margin:14px 0}
+.callout.green{border-color:var(--green);background:var(--green-bg)}
+.callout.amber{border-color:var(--amber);background:var(--amber-bg)}
+.callout.rose{border-color:var(--rose);background:var(--rose-bg)}
+.callout.navy{border-color:var(--navy);background:#eef2fa}
+.callout .ct{font-weight:800;color:var(--navy);margin-bottom:2px}
+.banner{background:linear-gradient(120deg,#1b2f5e,#26437e);color:#fff;border-radius:12px;padding:16px 20px;margin:14px 0}
+.banner b{color:#9fe7da}
+.tag-pink{display:inline-block;background:var(--rose-bg);color:var(--rose);border-radius:6px;padding:2px 9px;font-size:12px;margin:6px 0}
+ul.list,ol.list{padding-left:22px;margin:6px 0}
+ul.list li,ol.list li{margin:3px 0}
+table.tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin:12px 0}
+.tblwrap table.tbl{margin:0}
+table.tbl th,table.tbl td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.tbl th{background:#f4f7fb;color:var(--navy);font-weight:800;white-space:nowrap}
+table.tbl td:first-child{font-weight:700;color:var(--navy);min-width:90px}
+table.tbl tr:last-child td{border-bottom:0}
+.badge{display:inline-block;border-radius:5px;padding:0 6px;font-size:11px;font-weight:700;white-space:nowrap}
+.badge.official{background:#e6efff;color:#2753b5}.badge.public{background:var(--teal-bg);color:var(--teal)}
+.badge.paid{background:var(--amber-bg);color:var(--amber)}.badge.todo{background:var(--rose-bg);color:var(--rose)}
+.codebox{background:var(--dark);color:#e2e8f0;border-radius:10px;padding:14px 16px;font-family:var(--mono);font-size:13px;line-height:1.75;white-space:pre-wrap;word-break:break-word;margin:0}
+.prompt-card{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:14px 0}
+.prompt-card .box-b{padding:14px}
+.after{font-size:13px;margin-top:10px}
+details.det{border:1px solid var(--line);border-radius:10px;margin:12px 0;background:#fbfcfe}
+details.det>summary{cursor:pointer;padding:10px 14px;font-weight:700;color:var(--navy);list-style:none}
+details.det>summary::-webkit-details-marker{display:none}
+details.det>summary::before{content:"▶ ";font-size:11px}
+details.det[open]>summary::before{content:"▼ "}
+details.det>.dbody{padding:0 14px 12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.card{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:#fff}
+.card h3{font-size:15.5px;margin-bottom:6px}
+.pros{color:var(--teal);font-weight:800;font-size:12.5px;margin-top:6px}
+.cons{color:var(--rose);font-weight:800;font-size:12.5px;margin-top:6px}
+.selcard{cursor:pointer;transition:border-color .15s}
+.selcard.on{border:2px solid var(--navy);box-shadow:0 0 0 3px rgba(27,47,94,.08)}
+.pre-tree{background:#f6f8fb;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-family:var(--mono);font-size:13px;white-space:pre;overflow-x:auto;margin:10px 0}
+
+/* 工具卡 */
+.toolcard{display:flex;gap:16px;padding:16px;border-bottom:1px solid var(--line)}
+.toolcard:last-child{border-bottom:0}
+.tc-ill{width:76px;height:56px;border-radius:10px;background:#f1f5f9;border:1px solid var(--line);flex:none;position:relative;overflow:hidden}
+.tc-ill i{position:absolute;left:10px;height:5px;border-radius:3px}
+.tc-ill b{position:absolute;right:9px;bottom:8px;width:9px;height:9px;border-radius:50%}
+.tc-body{flex:1;min-width:0}
+.tc-tags{font-size:11.5px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.tc-tags .t{background:#e6efff;color:#2753b5;border-radius:5px;padding:0 6px;font-weight:700}
+.tc-tags .t.agent{background:var(--teal-bg);color:var(--teal)}
+.tc-tags .t.cloud{background:var(--amber-bg);color:var(--amber)}
+.tc-title{font-weight:800;color:var(--navy);font-size:15.5px;margin:2px 0}
+.tc-title u{text-decoration-thickness:2px}
+.tc-more{background:#f4f7fb;border-radius:10px;padding:10px 14px;margin:8px 0;font-size:13.5px}
+.tc-more h4{font-size:13px;margin:4px 0}
+
+/* 測驗 */
+.q{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0;background:#fff}
+.q-t{font-weight:700;color:var(--navy);margin-bottom:8px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{border:1px solid var(--line);background:#f8fafc;border-radius:7px;padding:4px 10px;font-size:13px;cursor:pointer;text-align:left;line-height:1.5}
+.opt:hover{border-color:#cbd5e1}
+.opt.right{background:var(--green-bg);border-color:#7fcb9b;color:var(--green);font-weight:700}
+.opt.wrong{background:var(--red-bg);border-color:#ef9a90;color:var(--red);font-weight:700}
+.opt.picked{border:2px solid var(--navy);background:#fff}
+.opt .s{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.q-ex{font-size:13px;margin-top:8px;color:var(--text)}
+.q-ex b{color:var(--navy)}
+.rate{display:grid;grid-template-columns:140px 110px 1fr;gap:4px 10px;font-size:13px;margin-top:10px;align-items:start}
+.rate>div{padding:5px 6px}
+.rate .row-hl{background:var(--teal-bg)}
+.rate .rn{font-weight:700;color:var(--navy)}
+.lv3{color:var(--green);font-weight:700}.lv2{color:var(--amber);font-weight:700}.lv1{color:var(--muted);font-weight:700}
+
+/* 流程圖 */
+.flow{display:flex;align-items:center;gap:6px;overflow-x:auto;padding:12px 4px 10px}
+.flow .st{border:1px solid #cbd5e1;border-radius:9px;padding:8px 12px;text-align:center;min-width:120px;flex:none;background:#fff}
+.flow .st b{display:block;color:var(--navy);font-size:13.5px}
+.flow .st span{font-size:11.5px;color:var(--muted)}
+.flow .ar{color:var(--muted);flex:none}
+
+/* 模擬器 */
+.sim{display:grid;grid-template-columns:1fr 200px;gap:18px;align-items:start;margin-top:8px}
+.clip{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin:8px 0;cursor:pointer;background:#fff}
+.clip.on{border-color:var(--navy);box-shadow:0 0 0 2px rgba(27,47,94,.12)}
+.clip .bar{height:10px;border-radius:3px;margin:6px 0 2px;display:flex;overflow:hidden}
+.stripe{background:repeating-linear-gradient(45deg,#e2e8f0 0 4px,#fff 4px 8px)}
+.tl{display:flex;height:30px;border-radius:6px;overflow:hidden;margin:8px 0;position:relative}
+.tl>div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:11.5px;font-weight:700;white-space:nowrap;overflow:hidden;border-right:1px solid rgba(255,255,255,.5);padding:0 3px}
+.tl .cursor{position:absolute;top:0;bottom:0;width:2px;background:#e11d48;border:0;padding:0}
+.phone{width:190px;aspect-ratio:9/16;border:7px solid #1f2937;border-radius:22px;background:#8a6a4f;position:relative;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden;margin:0 auto}
+.phone .lab{position:absolute;top:6px;left:6px;font-size:9.5px;background:rgba(0,0,0,.45);border-radius:4px;padding:0 5px}
+.phone .what{font-size:12px;padding:0 10px}
+.phone .cap{position:absolute;bottom:34px;left:8px;right:8px;font-weight:800;font-size:13.5px;text-shadow:0 1px 3px rgba(0,0,0,.6);line-height:1.45}
+.phone .tc{position:absolute;bottom:10px;font-size:10px;opacity:.85;font-family:var(--mono)}
+.phone .aud{position:absolute;top:24px;left:8px;right:8px;background:var(--teal);border-radius:4px;font-size:10px;padding:1px 0}
+.playrow{text-align:center;margin-top:8px;font-size:12px;color:var(--muted)}
+.tracks{font-size:11.5px}
+.track{display:grid;grid-template-columns:62px 1fr;align-items:center;gap:6px;margin:5px 0}
+.track .tn{text-align:right;font-weight:700;color:var(--navy)}
+.track .tr{position:relative;height:24px;background:#f1f5f9;border-radius:4px;overflow:hidden}
+.track .tr>div{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#fff;overflow:hidden;white-space:nowrap;border-right:1px solid rgba(255,255,255,.6)}
+.wave{background:repeating-linear-gradient(90deg,var(--teal) 0 2px,#5cc3b2 2px 4px)}
+.track .tr .cursor{background:#e11d48;width:2px;border:0;z-index:2}
+
+/* 指令產生器 */
+.gen{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;margin-top:10px}
+.gen-g{margin-bottom:14px}
+.gen-l{font-weight:800;color:var(--navy);font-size:13px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.gen-l .k{background:var(--navy);color:#fff;border-radius:4px;font-size:11px;padding:0 5px}
+.gen-r{position:sticky;top:64px}
+.gen-head{background:var(--navy);color:#fff;border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
+.gen-head b{font-size:16px}
+.gen textarea{width:100%;min-height:240px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--font);font-size:13.5px;line-height:1.7;color:var(--text);resize:vertical}
+.gen .view{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;min-height:240px;white-space:pre-wrap}
+.src{border-radius:4px;padding:0 1px}
+.src-mode{background:#fde2ea}.src-theme{background:#dbeafe}.src-length{background:#fef3c7}.src-style{background:#ede9fe}
+.src-feat{background:#dcfce7}.src-plat{background:#e0f2fe}.src-protect{background:#f1f5f9}
+.legend{display:flex;flex-wrap:wrap;gap:6px;font-size:11.5px;margin:6px 0}
+.flash{animation:flash 1.1s ease}
+@keyframes flash{0%,40%{outline:2px solid #e11d48}100%{outline:2px solid transparent}}
+.qual{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:12px;font-size:13px}
+.qual .qbar{height:6px;background:#e9eef5;border-radius:99px;overflow:hidden;margin:6px 0 8px}
+.qual .qbar i{display:block;height:100%;background:var(--teal)}
+.qual .ok{color:var(--teal)}.qual .no{color:var(--rose)}
+.qual .tip{color:var(--muted);font-size:12px;margin-left:18px}
+input.num{width:80px;border:1px solid var(--line);border-radius:7px;padding:3px 8px;font-size:13px}
+
+/* 勾選清單 */
+.check{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border:1px solid var(--line);border-radius:10px;margin:7px 0;cursor:pointer;background:#fff;user-select:none}
+.check .bx{width:18px;height:18px;border:2px solid #94a3b8;border-radius:5px;flex:none;margin-top:3px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900}
+.check.on{background:var(--teal-bg);border-color:#9ad8cd}
+.check.on .bx{background:var(--teal);border-color:var(--teal)}
+.check .ct{font-weight:700;color:var(--navy)}
+.check .cd{font-size:13px;color:var(--muted)}
+/* 句型 */
+.sent{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0}
+.sblk{border:2px solid #cbd5e1;border-radius:9px;padding:6px 12px;cursor:pointer;text-align:center;background:#fff;font-size:14px}
+.sblk small{display:block;font-size:11px;font-weight:700;min-height:16px}
+.plus{color:var(--muted)}
+.prob{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.prob button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:7px 9px;font-size:12.5px;text-align:left;cursor:pointer}
+.prob button.on{background:var(--rose-bg);border-color:var(--rose);font-weight:700}
+.prob button.done:not(.on){background:#fafafa;color:var(--muted)}
+.inner{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:12px}
+.inner h4{font-size:14px;margin-bottom:6px}
+.tlrow{display:grid;grid-template-columns:58px 1fr;gap:8px;align-items:center;font-size:12px}
+.home-hero{background:linear-gradient(125deg,#1b2f5e 0%,#22417a 60%,#4a3d6e 100%);color:#fff;border-radius:16px;padding:28px 30px;display:grid;grid-template-columns:1.25fr 1fr;gap:20px;align-items:center}
+.home-hero h1{color:#fff;font-size:27px;margin:6px 0 10px}
+.home-hero .k{font-size:12px;opacity:.85}
+.home-hero p{opacity:.95;font-size:14px}
+.hero-ill{display:flex;align-items:center;gap:10px}
+.hero-raw{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:10px;font-size:11px;flex:1}
+.hero-raw i{display:block;height:6px;border-radius:3px;margin:5px 0}
+.hero-done{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:8px;font-size:11px;text-align:center;flex:1}
+.hero-phone{width:70px;height:110px;margin:6px auto;border-radius:10px;border:3px solid #fff;background:linear-gradient(#d08b5b,#b5476b);display:flex;align-items:flex-end;justify-content:center;font-size:8.5px;font-weight:800;padding-bottom:8px}
+.homesec{max-width:780px;margin:26px auto 0}
+.homesec>h2{font-size:20px;font-weight:800;margin-bottom:10px;padding-top:16px;border-top:1px solid #dbe3ec}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;text-decoration:none;color:inherit;display:block}
+.pcard:hover{border-color:#cbd5e1}
+.pcard b{color:var(--navy);font-size:14px}
+.pcard .m{font-size:12px;color:var(--muted)}
+.pbar{height:5px;background:#e9eef5;border-radius:99px;overflow:hidden;margin:6px 0}
+.pbar i{display:block;height:100%;background:var(--teal)}
+.unit-end{border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:28px;background:#fbfcfe}
+.unit-end h3{font-size:16px}
+.unit-end.done{background:var(--green-bg);border-color:#b6e2c6}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;padding:8px 16px;border-radius:99px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:99}
+.toast.on{opacity:1}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mt{margin-top:10px}
+
+/* ---------- 手機版 ---------- */
+@media (max-width:860px){
+  .sidebar{transform:translateX(-100%);transition:transform .2s;width:260px;box-shadow:0 0 30px rgba(0,0,0,.2)}
+  body.menu-open .sidebar{transform:none}
+  body.menu-open .overlay{display:block;position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:35}
+  .main{margin-left:0}
+  .menubtn{display:inline-block}
+  .toolbar{padding:8px 10px;gap:6px}
+  .crumb{flex-basis:calc(100% - 90px);font-size:12px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tgroup{font-size:11px;gap:3px}
+  .seg button,.navbtn{padding:4px 8px;font-size:12px}
+  .tc-ill{display:none}
+  .content{padding:12px 8px 60px}
+  .lesson{padding:20px 16px}
+  .lesson h1{font-size:23px}
+  .grid2,.gen,.sim,.home-hero{grid-template-columns:1fr}
+  .grid4{grid-template-columns:1fr 1fr}
+  .prob{grid-template-columns:1fr 1fr}
+  .gen-r{position:static}
+  .rate{grid-template-columns:100px 90px 1fr}
+}
+</style>
+</head>
+<body>
+<aside class="sidebar" id="sidebar"></aside>
+<div class="overlay" id="overlay"></div>
+<div class="main">
+  <header class="toolbar" id="toolbar"></header>
+  <main class="content" id="content"></main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+/* ==========================================================================
+   課程內容（COURSE）——要改文字，只要改這一段，不用動下面的程式。
+   --------------------------------------------------------------------------
+   ● 文字裡可以用簡單的 HTML：<b>粗體</b>、<br>、<a href="#u3">連結</a>。
+   ● 會隨上方切換而改變的文字，用 v({...}) 包起來，可用的鍵：
+       chatgpt / claude                 → 依「AI」切換
+       chat / agent                     → 依「路線」切換
+       "gpt-chat" / "claude-chat" / "gpt-agent" / "claude-agent"
+                                        → 依 AI＋路線 的組合（優先順序最高）
+       default                          → 都沒對到時使用
+     例：v({chatgpt:"按「＋」上傳", claude:"把影片拖進對話"})
+   ● 每個單元的 reqs 是「完成條件」，id 不要重複；練習用 req: "某個 id" 綁定。
+   ● 區塊（blocks）的種類寫在每個區塊的 t 欄位，說明見 README.md。
+   ========================================================================== */
+function v(o){ o.__v = true; return o; }
+
+const COURSE = {
+  title: "AI 自動剪輯實戰",
+  subtitle: "用 ChatGPT／Claude 做美髮短影音",
+  storageKey: "ai-cut-course-v1",          // 瀏覽器儲存進度用的名字；改了會讓大家進度歸零
+  totalMinutes: 150,
+
+  /* 四種「AI＋路線」組合的顯示名稱 */
+  platformNames: {
+    "gpt-chat": "ChatGPT 對話",
+    "claude-chat": "Claude 對話",
+    "gpt-agent": "桌面 Codex 本機任務",
+    "claude-agent": "Claude Code 本機"
+  },
+
+  /* 側欄分組；pages 依序就是「上一頁／下一頁」的順序 */
+  navGroups: [
+    { label: null, pages: ["home", "prep"] },
+    { label: "正式課程", pages: ["u1", "u2", "ub", "u3", "u4", "u5", "u6", "u7"] },
+    { label: "課後", pages: ["review", "teacher"] }
+  ],
+
+  /* 共用文字（多處會用到的放這裡） */
+  shared: {
+    pasteWhere: v({
+      "gpt-chat": "<b>貼到哪裡：</b>ChatGPT 對話（或「工作」）的輸入框，先按「＋」傳影片。<b>去哪裡拿 MP4：</b>完成後下載對話裡的 MP4。",
+      "claude-chat": "<b>貼到哪裡：</b>Claude 對話（或 Cowork）的輸入框，先把影片拖進對話。<b>去哪裡拿 MP4：</b>完成後在對話裡下載。",
+      "gpt-agent": "<b>貼到哪裡：</b>桌面 Codex 的本機任務（先選「今天的剪髮」資料夾）。<b>去哪裡拿 MP4：</b>資料夾裡的「剪髮成品.mp4」。",
+      "claude-agent": "<b>貼到哪裡：</b>Claude 桌面版 Code 分頁（選 Local 和「今天的剪髮」資料夾）。<b>去哪裡拿 MP4：</b>資料夾裡的「剪髮成品.mp4」。"
+    }),
+    routeA: {
+      title: "路線 A：在 AI 對話裡剪",
+      pros: ["手機拍完就能開始", "不用安裝剪輯軟體", "同一段對話直接說要換哪個鏡頭"],
+      cons: v({
+        chatgpt: ["每支影片最大 512 MB，大檔先切成兩段", "AI 可能挑錯鏡頭或聽錯髮型名稱，要播放確認"],
+        claude: ["相機原檔太大，先用 HandBrake 壓成 1080p", "AI 可能挑錯鏡頭或聽錯髮型名稱，要播放確認"]
+      })
+    },
+    routeB: {
+      title: "路線 B：電腦上的 Codex／Claude Code",
+      pros: ["直接讀「今天的剪髮」資料夾，不用逐檔上傳", "800 MB 的原片也不用切段", "下週可以沿用同樣的字幕和片尾"],
+      cons: ["第一次要準備剪片和聽寫工具", "剪片時電腦要開著、磁碟要有空間", "速度看電腦效能"]
+    },
+    fourChecks: [
+      "手機打得開 MP4，畫面是直式的。",
+      "講到剪髮時，插入的畫面真的對得上手法。",
+      "畫面切到吹整時，我的口播仍然連續，吹風機聲沒有蓋過我。",
+      "字幕是繁體中文，髮型名稱正確，字幕沒有擋住剪刀或完成造型。"
+    ],
+    fixExample: "第 8 秒我在講瀏海，請把那裡的吹整畫面改成剪瀏海近照；保留原本口播，其他段落照舊，再匯出一次 MP4。",
+    checkedDate: "2026-11-19",
+    sources: [
+      ["OpenAI 說明中心：ChatGPT 檔案上傳限制", "https://help.openai.com/"],
+      ["OpenAI：Codex 開發者文件", "https://developers.openai.com/codex"],
+      ["Claude 說明中心：可上傳的檔案類型", "https://support.claude.com/"],
+      ["Claude Code 文件", "https://docs.claude.com/en/docs/claude-code/overview"],
+      ["Remotion：Claude Code 外掛", "https://www.remotion.dev/docs/ai/claude-code-plugin"],
+      ["FFmpeg", "https://ffmpeg.org/"]
+    ]
+  },
+
+  /* ------------------------------------------------------------------
+     頁面。每頁：id（網址 #id）、nav（側欄名稱）、crumb（工具列麵包屑）、
+     minutes、tag、title、lead、reqs（完成條件）、sections（編號章節）。
+     ------------------------------------------------------------------ */
+  pages: {}
+};
+
+/* ============================== 課程首頁 ============================== */
+COURSE.pages.home = {
+  nav: "課程首頁", crumb: "課程首頁", kind: "home",
+  hero: {
+    kicker: "AI 自動剪輯實戰",
+    title: v({ chatgpt: "不懂程式，也能用 ChatGPT／Claude 做出美髮短影音", claude: "不懂程式，也能用 ChatGPT／Claude 做出美髮短影音" }),
+    text: "今天學會：準備你對鏡頭講話的主影片（A-roll）和幾段穿插的剪髮畫面（B-roll），交給 AI 剪成保留原聲、有繁中字幕的直式 MP4。後面簡稱「口播」和「剪髮畫面」。",
+    rawTitle: "原始素材", rawSub: "三段手機影片", rawNote: "有停頓、晃動、沒字幕",
+    doneTitle: "完成作品", doneNote: "9:16、20 秒、字幕、片尾", phoneText: "歡迎私訊預約",
+    caption: "示意圖。第二單元有可操作的模擬。"
+  },
+  learn: [
+    { title: "每位學員都會學會", items: ["分辨 AI 助理和 AI Agent", "知道 ChatGPT、Claude、Codex、Claude Code、Grok Bot 各做什麼", "分清口播和輔助畫面，準備好素材", "用中文產生自己的剪輯指令", "用萬用句型叫 AI 修改", "發布前檢查"] },
+    { title: "要看帳號與環境的", items: ["在 ChatGPT 或 Claude 對話裡傳影片，拿回剪好的 MP4（ChatGPT 每支最大 512 MB）", "用 ChatGPT 工作模式先看參考頁再剪（需符合方案）", "用 Codex 讓 AI 在電腦上剪輯（免費版有限度、逐步開放）", "用 Claude Code 完整自動剪輯（需付費，講師示範）", "口播＋剪髮畫面自動剪輯並實際輸出 MP4（Agent 路線，需環境支援）", "存成可重複使用的店家剪輯範本"] }
+  ]
+};
+
+/* ============================== 課前準備 ============================== */
+COURSE.pages.prep = {
+  nav: "課前準備", crumb: "課前準備", tag: "課前", title: "課前準備精靈",
+  lead: "上課前做完這幾件事，課堂上就能專心剪片。勾選會記在這個瀏覽器。",
+  blocks: [
+    { t: "checklist", id: "prep.list", items: [
+      ["註冊 ChatGPT 免費帳號", "到 chatgpt.com 註冊並登入一次。"],
+      ["註冊 Claude 免費帳號", "到 claude.ai 註冊並登入一次。"],
+      ["（選做）安裝 ChatGPT 桌面版", "想試 Codex 的人：從 ChatGPT 官網下載桌面版並登入，看看是否有 Codex（免費版逐步開放）。"],
+      ["用手機直拍 1 段口播＋3 至 5 段剪髮畫面", "口播：對鏡頭介紹今天的作品，30～60 秒。剪髮畫面：剪髮、吹整、完成造型，每段 3～8 秒，拿穩、直拍。"],
+      ["確認客人同意公開影像", "請客人同意拍攝與在社群公開使用。"],
+      ["準備店名與預約方式（Logo 選填）", "預約方式寫成一句話；有 Logo 就存成圖片檔。"],
+      ["帶筆電與充電器", "Windows 或 Mac 都可以。沒有筆電也能用手機做路線 A。"]
+    ] },
+    { t: "callout", title: "不需要", html: "學任何剪輯軟體、寫程式，或自己安裝剪輯工具。進階工具由講師事先準備。" }
+  ]
+};
+
+/* ============================== 第 1 單元 ============================== */
+COURSE.pages.u1 = {
+  unit: 1, nav: "認識 AI", crumb: "第 1 單元：認識 AI", minutes: 12,
+  title: "認識 AI：先分清楚誰負責什麼",
+  reqs: [
+    { id: "u1.cards", label: "看過工具介紹" },
+    { id: "u1.compare", label: "完成一組比較切換" },
+    { id: "u1.map", label: "完成工具地圖：任務跑在哪裡" },
+    { id: "u1.quiz", label: "完成驗收情境練習" },
+    { id: "u1.match", label: "完成 5 題以上的工作配對" }
+  ],
+  sections: [
+    { title: "先用「開店做生意」分清楚 AI", blocks: [
+      { t: "p", html: "不談模型原理，先把它們當成店裡的幫手。點每張卡片底下的「看美髮案例」，看它在剪短影音時能幫你做哪一步。" },
+      { t: "toolcards", id: "u1.cards", req: "u1.cards", items: [
+        { tag: "AI 助理", tagType: "", org: "OpenAI・Anthropic", name: "AI 助理", title: "ChatGPT・Claude", color: "#1b2f5e",
+          desc: "像是美髮店的企劃兼剪輯助理。ChatGPT（OpenAI）和 Claude（Anthropic）是兩家公司的同類產品，選你平常用的那個就好：可以陪你想點子、寫口播，也可以把你傳的原片剪成 MP4。",
+          can: ["想短影音主題、寫口播稿與文案", "傳口播和剪髮畫面，在對話裡剪好交回 MP4", "寫標題和 hashtag"],
+          example: "你可以說：「幫我寫一段 30 秒的剪髮口播，並標出哪幾句適合穿插剪刀、吹整或完成造型的畫面。」它會給你一段口播稿，並在句子旁標出建議放哪種畫面。拍片前先有這份稿，拍剪髮畫面時就知道要拍什麼。" },
+        { tag: "執行型 Agent", tagType: "agent", org: "OpenAI", name: "Codex", title: "會使用電腦工具做事的 AI 執行助手", color: "#0e8f7e",
+          desc: "像請了一位懂電腦的數位製作助理。它可以讀取你指定的資料夾、建立剪輯流程、執行影片處理工具，幫你把剪輯計畫變成真正的 MP4。",
+          can: ["在 ChatGPT 桌面版裡使用", "讀取資料夾裡的影片、使用剪輯工具、輸出 MP4", "免費方案有限度可用（逐步開放）"],
+          example: "把 1 段口播和 3 至 5 段剪髮畫面放進一個資料夾，在桌面 Codex 選本機任務和這個資料夾，用中文說要剪成直式 Reels。它會先確認電腦有沒有轉寫和剪輯工具，缺的會問你要不要安裝，再實際剪好，把 MP4 存回資料夾。" },
+        { tag: "執行型 Agent", tagType: "agent", org: "Anthropic", name: "Claude Code", title: "會使用電腦工具做事的 AI 執行助手", color: "#b5476b",
+          desc: "和 Codex 是同一類。它在 Claude 桌面版的「Code」分頁裡，可以操作你允許的資料夾、檔案與工具，執行實際的影片製作。",
+          can: ["在 Claude 桌面版的 Code 分頁使用，不用打指令", "讀取資料夾、使用剪輯工具、輸出 MP4", "需要 Pro 以上付費方案"],
+          example: "和 Codex 一樣：選資料夾、說需求、它剪好輸出。可以把你的剪法存成「技能」，下一支只要一句話。本課由講師示範。" },
+        { tag: "雲端 Agent", tagType: "cloud", org: "xAI", name: "Grok Bot", title: "可以交辦事情的 AI 數位員工", color: "#c27c0e",
+          desc: "像一位有雲端電腦的助理，可以跨網站、應用程式與其他工具完成任務，也能持續在背景工作。不過它不是專門的影片剪輯軟體。",
+          can: ["在自己的雲端電腦上工作", "登入你授權的工具，處理多步驟工作", "2026 年 8 月推出的測試版產品"],
+          example: "本課不用它剪片，也不需要安裝。介紹它是讓你知道：AI 已經從「回答問題」走到「替你做事」。" }
+      ] },
+      { t: "small", html: "以上是給初學者的比喻，不是能力互斥的技術分類。介面圖為示意，不是實際產品畫面。產品資訊查核日期：2026-11-19。" }
+    ] },
+    { title: "我拍好影片了，用哪種方式剪？", blocks: [
+      { t: "p", html: "假設你說「這裡把髮尾打薄」，希望畫面剛好切到剪刀修髮尾的近照，你的聲音繼續，繁體字幕跟著你說的話出現。以下四種方式，都以交回一支能播放的直式 MP4 為目標。" },
+      { t: "table", head: ["做法", "怎麼做", "對這支影片有什麼幫助？", "限制"], rows: v({
+        chatgpt: [
+          ["ChatGPT 一般對話", "按「＋」上傳一段口播和幾段剪髮影片，貼上剪輯要求，再下載 MP4。", "手機就能剪出第一版。若畫面配錯，直接說「第 8 秒換成剪髮尾的近照」。", "每個附件最大 512 MB。相簿選不到影片時，改從手機的「檔案」選。"],
+          ["ChatGPT 工作模式（Work）", "上傳原片和剪輯要求。有喜歡的參考片，也可以貼上網址，請它打開來看。", "適合想模仿特定節奏。例如請它參考對方的開場，先放完成造型兩秒，再切回你說話。", "參考片必須能開啟播放。原片當對話附件上傳時，每檔上限也是 512 MB。"],
+          ["雲端 Codex", "把原片放到已設好的線上資料夾，交代怎麼剪，再下載成品。", "能沿用店裡存好的剪法，例如每支都先秀成果、字幕放同一位置、片尾放店名。", "第一次要設好剪片工具和成品下載位置；大檔案需要時間上傳。"],
+          ["電腦上的 Codex", "選店裡電腦的素材資料夾，請它剪片，並把剪輯設定和 MP4 一起存好。", "若你喜歡第一版大部分的畫面，可以指定「只換第 8 至 10 秒，保留原本的聲音和字幕」。", "第一次要準備剪片和字幕工具。剪片時電腦要開著，大原片可以直接從資料夾讀取。"]
+        ],
+        claude: [
+          ["Claude 一般對話", "把口播和剪髮影片拖進對話（或按迴紋針），貼上剪輯要求，再下載 MP4。", "手機或電腦就能剪出第一版。畫面配錯時，直接說「第 8 秒換成剪髮尾的近照」。", "官方沒有公布影片上限；相機原檔太大時，先用 HandBrake 壓成 1080p。"],
+          ["Claude Cowork（或合併後的 Claude）", "交辦多步驟工作：上傳原片和剪輯要求，也可以請它先打開參考頁看。", "適合想模仿特定節奏，例如先放完成造型兩秒，再切回你說話。", "介面依帳號不同：有的分開 Chat／Cowork，有的已合併。參考片必須能開啟播放。"],
+          ["Claude Code 雲端", "把原片放進已設好的線上專案，交代怎麼剪，再取回成品。", "能沿用店裡存好的剪法，例如字幕位置、片尾樣式每支都一樣。", "需 Pro 以上；第一次要設好遠端環境、剪片工具和成品取回方式。"],
+          ["電腦上的 Claude Code", "在 Claude 桌面版 Code 分頁選 Local 和素材資料夾，請它剪片並存好設定與 MP4。", "可以指定「只換第 8 至 10 秒，保留原本的聲音和字幕」，也能把剪法存成技能。", "需 Pro 以上；第一次要準備剪片和字幕工具，剪片時電腦要開著。"]
+        ]
+      }) },
+      { t: "p", html: v({
+        chatgpt: "四種都能剪片，也都能再要求修改，不是品質等級。一般對話最快開始；Work 可以打開網頁、參考能播放的影片；Codex 可以把剪法存成專案，逐段修改、下次沿用。雲端和電腦上的差別，在原片放哪裡、由哪台電腦處理。用 Claude 的人，按上方工具列的「Claude」，表格會換成 Claude 的做法。",
+        claude: "四種都能剪片，也都能再要求修改，不是品質等級。一般對話最快開始；Cowork 適合多步驟、先看參考頁再剪；Claude Code 可以把剪法存成技能，逐段修改、下次沿用。雲端和電腦上的差別，在原片放哪裡、由哪台電腦處理。用 ChatGPT 的人，按上方工具列的「ChatGPT」，表格會換成 ChatGPT 的做法。"
+      }) },
+      { t: "callout", title: "剪出來，怎麼看好不好？", html: "播放你說「把髮尾打薄」的那一句。① 畫面有沒有真的拍到髮尾？② 換畫面時，你的聲音有沒有繼續？③ 字幕有沒有打錯字或擋住剪刀？這三件事，比工具名稱更能看出這支片剪得好不好。" },
+      { t: "prompt", source: "default", title: "自動剪輯要求（30 秒，{AI} 版）", copyLabel: "複製自動剪輯要求",
+        after: v({
+          chatgpt: "{PASTE}<br>用 Codex（雲端或電腦上）時，最後再加一句「請把影片存成這個資料夾裡的『剪髮成品.mp4』，並把這次的剪輯設定一起存在資料夾裡。」。<br>要改秒數、加店名或片尾，到<a href=\"#u3\">第 4 單元指令產生器</a>。",
+          claude: "{PASTE}<br>用 Claude Code（雲端或電腦上）時，最後再加一句「請把影片存成這個資料夾裡的『剪髮成品.mp4』，並把這次的剪輯設定一起存在資料夾裡。」。<br>要改秒數、加店名或片尾，到<a href=\"#u3\">第 4 單元指令產生器</a>。"
+        }) },
+      { t: "sources" },
+      { t: "quiz", id: "u1.quiz", req: "u1.quiz", title: "練習：這個情況選哪一種做法？", qs: [
+        { q: "情境 1：我的口播原片有 800 MB，想用 ChatGPT 一般對話剪。", opts: ["先用手機分成上下兩段，每段小於 512 MB，再一起傳", "直接傳，ChatGPT 會自動壓縮", "改用工作模式就沒有大小限制"], a: 0, ex: "ChatGPT 對話附件每支最大 512 MB，每支分開計算。工作模式把影片當附件上傳時，也是同一個上限。" },
+        { q: "情境 2：我想讓 AI 先打開 IG 參考片看開場，再用我的原片剪出類似節奏。", opts: ["ChatGPT 工作模式（Work）", "電腦上的 Codex", "只能自己剪"], a: 0, ex: "工作模式可以打開能播放的參考頁，看完再用你上傳的原片剪。" },
+        { q: "情境 3：我在 Work 裡只貼了「D:\\今天的剪髮」這個資料夾名稱，請它剪片。", opts: ["它讀不到，要把原片上傳，或改用電腦上的 Codex", "它會自己打開這個資料夾"], a: 0, ex: "雲端工作在遠端電腦做，看不到你電腦裡的資料夾。電腦上的 Codex 選這個資料夾，才能直接讀原片。" },
+        { q: "情境 4：店裡每週都要剪片，原片都很大，存在店裡電腦。", opts: ["電腦上的 Codex", "ChatGPT 一般對話"], a: 0, ex: "大原片直接從資料夾讀，不用切段上傳，剪法也能每週沿用。" },
+        { q: "情境 5：我用手機查看雲端 Codex 的剪片進度。", opts: ["剪片在 OpenAI 的遠端電腦上跑，手機只是用來看", "剪片在我的手機上跑"], a: 0, ex: "手機和網頁只是操作入口；雲端 Codex 的任務在 OpenAI 的遠端電腦上執行。" }
+      ] }
+    ] },
+    { title: "工具地圖：對話、Work／Cowork、Codex／Claude Code", blocks: [
+      { t: "p", html: "用三個美髮情境選對工具。點上面的情境切換。" },
+      { t: "toolmap", id: "u1.mapTabs", title: "美髮店的 AI 工具地圖", tabs: [
+        { label: "1. 我要寫口播，或從手機直接剪一支", icon: "💬", use: "ChatGPT／Claude 對話",
+          eg: "「幫我寫一段 30 秒的剪髮口播稿」，或按「＋」傳口播和剪髮畫面，請它剪好交回 MP4。",
+          where: "在 OpenAI 或 Anthropic 的遠端電腦上做，你在對話裡下載 MP4。", unit: "第 5 單元路線 A。" },
+        { label: "2. 我要交辦一件多步驟的工作", icon: "🗂️", use: "ChatGPT 工作模式（Work）／Claude Cowork",
+          eg: "請 AI 打開 IG 參考片看開場，再用我上傳的原片剪出類似節奏的 MP4。",
+          where: "在 OpenAI 的遠端電腦上做：可以打開參考頁，再用你上傳的原片剪出 MP4。只貼電腦資料夾的名稱，它讀不到裡面的原片。",
+          unit: "第 1 單元的做法②；只剪一支時，一般對話也可以。",
+          extra: [
+            { t: "callout", title: "Claude 的介面有兩種，看你的帳號", html: "看得到分開的「Chat」和「Cowork」選項：多步驟工作選 Cowork。<br>已經合併成一個 Claude（沒有模式可選）：直接在對話裡交辦，Claude 會自己判斷要不要動手做。Anthropic 從 2026 年 9 月 16 日開始逐步合併。" },
+            { t: "small", html: "ChatGPT 工作模式（Work）是 ChatGPT 裡的一個模式，和 Codex 是不同的產品入口。方案、開放狀況和介面以當期官方資料為準（查核：2026-11-19）。" }
+          ] },
+        { label: "3. 我要讓 AI 讀取素材資料夾、執行剪輯工具，交付影片", icon: "🖥️", use: "Codex／Claude Code",
+          eg: "讀取「今天的剪髮」資料夾，挑剪髮畫面、保留原聲、上繁中字幕，存成「剪髮成品.mp4」。",
+          where: "電腦上的版本用你的電腦剪；雲端版本用遠端電腦剪（見下方對照）。本課主教電腦上的版本。",
+          unit: "第 5 單元路線 B 的主角。",
+          extra: [
+            { t: "table", head: ["", "本機", "雲端"], rows: [
+              ["用誰的電腦", "你自己的電腦，只能碰你授權指定的資料夾", "OpenAI 或 Anthropic 的遠端環境"],
+              ["素材", "已經在你的資料夾裡", "要事先送到遠端環境（例如放進 GitHub 專案）"],
+              ["剪輯工具", "裝在你的電腦上", "要事先在遠端環境準備好"],
+              ["成品怎麼拿", "直接存在你的資料夾", "要另外取回（下載或從專案拉回）"],
+              ["電腦闔上之後", "任務會停，電腦要開著", "任務會繼續跑"],
+              ["產品", "桌面 Codex 的本機任務、Claude Code 本機（Claude 桌面版 Code 分頁選 Local）", "雲端 Codex（Codex Cloud）、Claude Code 雲端工作階段"],
+              ["方案（2026-11-19）", "Codex：免費有限度；Claude Code：Pro 以上", "Codex Cloud：Plus 以上；Claude Code 雲端：Pro 以上"],
+              ["一句話：任務實際跑在哪裡", "在你的電腦上跑。", "在 OpenAI 或 Anthropic 的遠端電腦上跑。"]
+            ] },
+            { t: "callout", title: "手機和網頁只是「操作入口」", html: "你可以用手機或網頁開啟、查看任務，但這不代表任務跑在手機上。要問的是：素材、剪輯工具和成品在哪一台電腦。" }
+          ] }
+      ] },
+      { t: "quiz", id: "u1.mapQuiz", req: "u1.map", title: "練習：這個任務實際跑在哪裡？", qs: [
+        { q: "在 Claude 桌面版的 Code 分頁選「Local」和你的剪片資料夾。", opts: ["在你的電腦上跑", "在 OpenAI／Anthropic 的遠端電腦上跑"], a: 0, ex: "選 Local 就是本機任務，用你的電腦和資料夾。" },
+        { q: "用手機打開 Claude App，開一個 Claude Code 雲端工作階段。", opts: ["在你的電腦上跑", "在 OpenAI／Anthropic 的遠端電腦上跑"], a: 1, ex: "雲端工作階段在 Anthropic 的遠端環境執行，手機只是操作入口。" },
+        { q: "用網頁打開 ChatGPT，請它想三個口播題目。", opts: ["在你的電腦上跑", "在 OpenAI／Anthropic 的遠端電腦上跑"], a: 1, ex: "一般對話都在 OpenAI 的遠端電腦上處理，瀏覽器只是顯示結果。" }
+      ] }
+    ] },
+    { title: "切換比較：它們差在哪？", blocks: [
+      { t: "tabs", id: "u1.cmp", req: "u1.compare", reqMin: 2, title: "比較切換", tabs: [
+        { label: "ChatGPT vs Claude", blocks: [
+          { t: "table", head: ["", "ChatGPT", "Claude"], rows: [
+            ["是什麼", "AI 助理", "AI 助理"],
+            ["介面", "可以在「對話」和「工作」之間切換", "有的帳號是分開的 Chat／Cowork，有的已合併成同一個對話"],
+            ["怎麼給影片", "按輸入框旁的「＋」選影片", "把影片拖進對話，或按迴紋針選影片"],
+            ["影片大小", "每支最大 512 MB；免費版每天 3 個檔案", "官方沒有公布影片上限；本帳號附加 58 MB 成功，相機原檔先用 HandBrake 壓小"],
+            ["能剪成 MP4 嗎", "可以，有公開案例：剪接、加字幕、交回 MP4", "可以，本帳號案例：剪接、裁直式、燒字幕，在對話裡下載 MP4"],
+            ["字幕", "會聽口播，但髮型名稱可能聽錯，要核對", "本帳號案例是把字幕檔和原片一起提供；想讓它自己聽，要在要求裡寫清楚"]
+          ] },
+          { t: "small", html: "兩家都能把你的原片剪成 MP4。差在怎麼給影片、大小限制和字幕做法。" }
+        ] },
+        { label: "Codex vs Claude Code", blocks: [
+          { t: "table", head: ["", "Codex", "Claude Code"], rows: [
+            ["是什麼", "執行型 Agent", "執行型 Agent"],
+            ["在哪裡用", "ChatGPT 桌面版", "Claude 桌面版的 Code 分頁"],
+            ["免費方案", "有限度可用（逐步開放）", "不能用，需 Pro 以上"],
+            ["能用剪輯工具輸出 MP4", "可以（要先有 FFmpeg 等工具）", "可以（要先有 FFmpeg 等工具）"],
+            ["Remotion 官方外掛", "有", "有"]
+          ] },
+          { t: "small", html: "兩者做的事很接近，差在所屬平台與付費方式。" }
+        ] },
+        { label: "一般對話 vs Agent", blocks: [
+          { t: "table", head: ["", "一般對話", "Agent（Work／Cowork、Codex／Claude Code）"], rows: [
+            ["像什麼", "打電話問企劃助理", "請助理實際動手做"],
+            ["素材從哪裡來", "你上傳或貼上的內容", "你上傳的、或你授權它存取的資料夾"],
+            ["會自己執行多個步驟嗎", "通常一問一答", "會規劃、執行、檢查，再回報"],
+            ["給它一個參考片網址時", "看你貼的文字或截圖", "可以打開參考頁、看能播放的內容，再接著剪（例如 Work）"],
+            ["需要你按「允許」嗎", "很少", "常常，要看清楚再按"],
+            ["適合", "想點子、寫腳本，傳幾段原片直接剪一支", "要先看參考頁再剪、或每週固定剪店裡資料夾的原片"]
+          ] },
+          { t: "small", html: "兩種都能剪 MP4。對話適合一次剪一支；Agent 適合多步驟、或要重複做的工作。" }
+        ] }
+      ] }
+    ] },
+    { title: "情境配對：素材、工具和成品怎麼交接？", blocks: [
+      { t: "p", html: "每題都寫了限制。選完會看到四種做法各適不適合，以及素材、工具、成品怎麼交接。" },
+      { t: "match", id: "u1.match", req: "u1.match", reqMin: 5, title: "AI 工作配對",
+        options: [
+          { label: "一般對話", sub: "ChatGPT／Claude", short: "一般對話" },
+          { label: "工作模式", sub: "ChatGPT Work／Claude Cowork", short: "工作模式" },
+          { label: "電腦上的 Codex", sub: "或 Claude Code 本機", short: "電腦上的 Codex" },
+          { label: "雲端 Codex", sub: "或 Claude Code 雲端", short: "雲端 Codex" }
+        ],
+        qs: [
+          { q: "情境 1：我想知道明天可以拍什麼美髮短片。（只需要點子）", r: [
+            [3, "你給店名和客群，它回一串題目，不用傳任何影片。"], [1, "不需要它去開網頁或剪片。"], [1, "用不到你電腦裡的檔案。"], [1, "用不到遠端電腦。"] ] },
+          { q: "情境 2：剛拍完一段 40 秒口播和 3 段剪髮畫面，都在手機裡，想今天就剪一支。", r: [
+            [3, "按「＋」選影片、貼上剪輯要求，在對話裡下載 MP4。手機拍完就能開始。"], [2, "也做得到；只剪一支時，一般對話就夠。"], [1, "要先把影片傳到電腦的資料夾。"], [1, "第一次要先設好遠端環境，不適合臨時剪一支。"] ] },
+          { q: "情境 3：我在 IG 看到喜歡的開場，想讓 AI 打開那個網址看開場，再用我的原片剪出類似節奏。", r: [
+            [2, "可以把參考片截圖或描述貼給它，但它不會自己打開網址看。"], [3, "可以打開能播放的參考頁，看完開場，再用你上傳的原片剪出類似節奏的 MP4。"], [2, "也做得到，但要先準備好工具；只為了看一個參考片，工作模式比較快。"], [1, "要先設好遠端環境，為一支參考片不划算。"] ] },
+          { q: "情境 4：每週都有 800 MB 的口播原片，存在店裡電腦的「今天的剪髮」資料夾。", r: [
+            [1, "每支要切成小於 512 MB 才能傳，每週都要重來一次。"], [1, "一樣要逐檔上傳大原片，很花時間。"], [3, "直接讀資料夾裡的大原片，不用切段，成品存回同一個資料夾，剪法每週沿用。"], [2, "也可以，但大原片要先上傳到遠端環境，比較花時間。"] ] },
+          { q: "情境 5：店裡電腦整天要結帳排班，不想被剪片佔住，而且講師已經幫店裡設好遠端剪片流程。", r: [
+            [2, "可以臨時剪一支，但每次都要重新上傳和交代剪法。"], [2, "可以交辦，但每次都要重新交代剪法。"], [1, "會佔用店裡電腦，而且剪片時電腦要一直開著。"], [3, "在遠端電腦剪，不佔店裡電腦；流程已經設好，丟素材、取回成品就好。"] ] },
+          { q: "情境 6：我在「工作」裡只貼了「D:\\今天的剪髮」這個資料夾名稱，請它剪片。", r: [
+            [2, "把原片直接上傳到對話，就能剪。"], [1, "工作模式在遠端電腦做，讀不到你電腦裡的資料夾；要上傳原片才行。"], [3, "選這個資料夾，就能直接讀裡面的原片，成品也存回這裡。"], [1, "遠端電腦一樣看不到你電腦裡的資料夾。"] ] }
+        ] }
+    ] },
+    { title: "下一步：AI 怎麼自動幫我們剪影片？", blocks: [
+      { t: "grid2", cards: [
+        { title: "路線 A：在 AI 對話裡剪", html: v({ chatgpt: "上表的「一般對話」和「工作模式」：傳影片、貼上自動剪輯要求，在對話裡下載 MP4。", claude: "上表的「Claude 對話／Cowork」：傳影片、貼上自動剪輯要求，在對話裡下載 MP4。" }) },
+        { title: "路線 B：電腦上的 Codex／Claude Code", html: v({ chatgpt: "上表的「電腦上的 Codex」：選「今天的剪髮」資料夾，成品存成「剪髮成品.mp4」。", claude: "上表的「電腦上的 Claude Code」：選「今天的剪髮」資料夾，成品存成「剪髮成品.mp4」。" }) }
+      ] },
+      { t: "small", html: "雲端 Codex／Claude Code 雲端要先有人設好線上資料夾和剪片工具，課堂上由講師示範。" },
+      { t: "p", html: "先在第二單元看看「自動剪輯」到底在做什麼，第五單元再選路線動手。" }
+    ] }
+  ]
+};
+
+/* ============================== 第 2 單元 ============================== */
+COURSE.pages.u2 = {
+  unit: 2, nav: "自動剪輯是什麼", crumb: "第 2 單元：自動剪輯是什麼", minutes: 10,
+  title: "AI 自動剪輯到底在做什麼",
+  reqs: [
+    { id: "u2.quiz", label: "分辨三種「AI 做影片」" },
+    { id: "u2.strat", label: "試過兩種以上的剪輯策略" }
+  ],
+  sections: [
+    { title: "真正的 AI 自動剪輯，是這七步", blocks: [
+      { t: "flow", title: "AI 自動剪輯流程", steps: [
+        ["準備真實素材", "手機拍的影片"], ["告訴 AI 想要的成品", "用中文"], ["AI 分析與規劃", "選片、排順序"],
+        ["AI 用工具剪輯", "剪接、字幕、片尾"], ["預覽", "你親眼看"], ["用中文修改", "哪段＋問題＋改法"], ["輸出 MP4", "可以發布"]
+      ] },
+      { t: "p", html: "注意第 4 步：要有「能處理影片的環境」，AI 才能真的剪。一般聊天不一定有這個環境，第五單元會教你分辨。" }
+    ] },
+    { title: "分辨：這是哪一種「AI 做影片」？", blocks: [
+      { t: "p", html: "本課主角是第三種「AI 自動剪輯」。第二種是做不到時的備援。" },
+      { t: "quiz", id: "u2.quiz", req: "u2.quiz", title: "三種 AI 做影片", qs: [
+        { q: "輸入一段文字，AI 產生一支「不存在的模特兒換髮色」影片", opts: ["AI 生成影片", "AI 輔助剪輯", "AI 自動剪輯"], a: 0, ex: "畫面是 AI 新做出來的，不是你的作品。美髮作品展示要避免，客人會以為是真的。" },
+        { q: "AI 給你剪輯順序和字幕稿，你自己用手機 App 剪", opts: ["AI 生成影片", "AI 輔助剪輯", "AI 自動剪輯"], a: 1, ex: "AI 只出計畫，真正動手剪的是你，這是「輔助」。" },
+        { q: "AI 讀取你拍的口播和剪髮畫面，剪好並輸出 MP4", opts: ["AI 生成影片", "AI 輔助剪輯", "AI 自動剪輯"], a: 2, ex: "用你的真實素材，AI 自己剪好交出成品，這就是本課主角。" },
+        { q: "AI 寫好字幕文字，你貼進剪輯 App", opts: ["AI 生成影片", "AI 輔助剪輯", "AI 自動剪輯"], a: 1, ex: "AI 幫忙寫字幕，剪輯還是你自己做。" },
+        { q: "你說要求，AI 做出一段會動的店名字卡動畫", opts: ["AI 生成影片", "AI 輔助剪輯", "AI 自動剪輯"], a: 0, ex: "字卡畫面是 AI 新做出來的，屬於生成。拿來當片頭片尾沒問題，但不是剪你的素材。" },
+        { q: "AI 把你上傳的影片剪成 15 秒並加上店名，給你 MP4", opts: ["AI 生成影片", "AI 輔助剪輯", "AI 自動剪輯"], a: 2, ex: "素材是你的，剪接和加字都是 AI 完成，交回成品。" }
+      ] }
+    ] },
+    { title: "動手看：同樣的素材，不同剪法", blocks: [
+      { t: "tagPink", text: "教學模擬：色塊代表畫面，不是真的影片，也沒有分析你的檔案" },
+      { t: "stratSim", id: "u2.sim", req: "u2.strat", reqMin: 2, total: 20,
+        clips: [
+          { key: "A", name: "染髮前", sec: 8, color: "#8a6a4f", cut: [0, 25], note: "前 2 秒在調整手機，會被刪除。" },
+          { key: "B", name: "染髮過程", sec: 15, color: "#b5476b", cut: [40, 73], note: "中間有 5 秒手在晃，會被刪除。" },
+          { key: "C", name: "染髮完成", sec: 12, color: "#c98a4b", cut: [75, 100], note: "最後 3 秒鏡頭拍到地板，會被刪除。" }
+        ],
+        strategies: [
+          { name: "精彩畫面優先", desc: "精彩畫面優先：先讓人看到最好看的成果，抓住前 2 秒的注意力。", segs: [
+            ["完成造型亮點", 4, "C", "這個顏色太美了"], ["施作精華", 8, "B", "每一層都細心上色"], ["轉身展示", 5, "C", "轉身看看光澤"], ["預約片尾", 3, "end", "歡迎私訊預約"] ] },
+          { name: "時間順序優先", desc: "時間順序優先：照實際發生的順序，觀眾看得懂過程，但開頭比較平淡。", segs: [
+            ["染髮前", 4, "A", "今天的客人想換髮色"], ["施作過程", 8, "B", "先分區再上色"], ["完成", 5, "C", "完成了！"], ["預約片尾", 3, "end", "歡迎私訊預約"] ] },
+          { name: "前後對比優先", desc: "前後對比優先：把染髮前和完成放在一起，變化一眼就看懂，適合改造型作品。", segs: [
+            ["染髮前", 3, "A", "染之前是這樣"], ["染髮完成", 3, "C", "染完變這樣！"], ["前後並排", 6, "C", "前後差很多吧"], ["施作過程", 5, "B", "其實是這樣做的"], ["預約片尾", 3, "end", "歡迎私訊預約"] ] },
+          { name: "美髮教學優先", desc: "美髮教學優先：依操作步驟排列，每一步都看得清楚，適合想學技巧或想了解過程的觀眾。", segs: [
+            ["成果預告", 2, "C", "今天教你這個顏色"], ["步驟一：分區", 5, "B", "第一步，先分四區"], ["步驟二：上色", 5, "B", "第二步，從髮根上色"], ["步驟三：吹整", 5, "C", "第三步，吹出光澤"], ["預約片尾", 3, "end", "歡迎私訊預約"] ] }
+        ] },
+      { t: "p", html: "真實的 AI 自動剪輯，也是先找出可用畫面、刪掉停頓與晃動，再依你的要求排順序。差別在它處理的是你真正的影片。" }
+    ] }
+  ]
+};
+
+/* ====================== 第 3 單元（口播＋剪髮畫面，#ub） ====================== */
+COURSE.pages.ub = {
+  unit: 3, nav: "口播＋剪髮畫面", crumb: "第 3 單元：口播＋剪髮畫面", minutes: 15,
+  title: "核心案例：口播＋剪髮畫面自動剪輯",
+  reqs: [
+    { id: "ub.quiz", label: "分清口播與剪髮畫面" },
+    { id: "ub.tl", label: "比較純口播與加入剪髮畫面" },
+    { id: "ub.match", label: "完成剪髮畫面配對練習" },
+    { id: "ub.gen", label: "用這個案例產生指令" }
+  ],
+  intro: [
+    { t: "banner", html: "<b>這個單元的結論</b><br>我只要拍一段自己講話的影片，再提供幾段剪頭髮的畫面，就能指揮 AI 幫我剪成有剪髮畫面的專業短影音。" }
+  ],
+  sections: [
+    { title: "口播和剪髮畫面是什麼？", blocks: [
+      { t: "grid2", cards: [
+        { title: "口播：你對鏡頭講話的主影片（A-roll）", border: "#1b2f5e", html: "你對著鏡頭講話的影片。整支影片的故事和聲音都來自它。<br><span class=\"small\">例：介紹今天的剪髮作品、分享髮型設計技巧、說客人的改造過程。</span>" },
+        { title: "剪髮畫面：穿插的剪髮畫面（B-roll）", border: "#b5476b", html: "用來「演出」你正在講的內容，蓋在主畫面上。通常只用畫面、不用它的聲音。<br><span class=\"small\">例：剪刀修剪特寫、電剪操作、吹整造型、髮絲細節、完成髮型。</span>" }
+      ] },
+      { t: "layers" },
+      { t: "quiz", id: "ub.quiz", req: "ub.quiz", title: "練習：這是口播還是剪髮畫面？", qs: [
+        { q: "美髮師對著鏡頭說：「今天這位客人想剪好整理的短髮。」", opts: ["口播（主影片）", "剪髮畫面（穿插）"], a: 0, ex: "你講話的畫面，是整支影片的主線，聲音也來自這裡。" },
+        { q: "剪刀修剪髮尾的特寫", opts: ["口播（主影片）", "剪髮畫面（穿插）"], a: 1, ex: "用來演出「我在修髮尾」，蓋在口播上，只用畫面。" },
+        { q: "吹整造型的過程", opts: ["口播（主影片）", "剪髮畫面（穿插）"], a: 1, ex: "吹風機的聲音通常不用，畫面配合你講吹整的那句話。" },
+        { q: "結尾對鏡頭說：「歡迎私訊預約。」", opts: ["口播（主影片）", "剪髮畫面（穿插）"], a: 0, ex: "結尾露臉說預約，觀眾比較有信任感，這是口播。" },
+        { q: "客人完成髮型轉身的畫面", opts: ["口播（主影片）", "剪髮畫面（穿插）"], a: 1, ex: "完成造型轉身是最好用的剪髮畫面，常放在講「完成」的那句。" }
+      ] }
+    ] },
+    { title: "時間軸模擬：純口播 vs 加入剪髮畫面", blocks: [
+      { t: "p", html: "切換三種版本看差別。注意最下面的「口播聲音」：加入剪髮畫面後，聲音完全沒有變，只有畫面被蓋上去。" },
+      { t: "tagPink", text: "教學模擬：色塊代表畫面，不是真的影片，也沒有分析你的檔案" },
+      { t: "arollSim", id: "ub.sim", req: "ub.tl", reqMin: 2, speed: 1.5,
+        lines: [
+          "今天這位客人想要剪一個好整理的短髮。", "我先用剪刀把外輪廓修出來。", "後面用電剪推出乾淨的層次。",
+          "吹整的時候要順著髮流，從髮根吹起。", "你看，髮尾的弧度很自然。", "這就是完成的樣子。", "想剪一樣的髮型，歡迎私訊預約。"
+        ],
+        /* 每句在「已刪停頓」版本中的起訖秒數 */
+        times: [[0, 3.5], [3.5, 7], [7, 10.5], [10.5, 14], [14, 17], [17, 20], [20, 23]],
+        /* 原始版本：在第幾句之後插入停頓／口誤（秒） */
+        pauses: [[0, 1.2, "停頓"], [2, 1.0, "口誤"], [4, 0.8, "停頓"]],
+        broll: [[4, 3, "剪刀修剪特寫", "#b5476b"], [7.5, 2.5, "電剪操作", "#7c4d8a"], [11, 2.5, "吹整過程", "#c27c0e"], [14.5, 2, "髮絲細節", "#0e8f7e"], [17, 1.5, "完成造型轉身", "#c98a4b"]],
+        versions: [
+          { name: "原始口播（含停頓、口誤）", desc: "<b>總長 26.0 秒：</b>含 2 段停頓和 1 段口誤（灰色），整支都是同一個畫面。" },
+          { name: "純口播（已刪停頓）", desc: "<b>總長 23.0 秒：</b>已刪掉 3 段停頓與口誤，但整支都是同一個畫面，容易無聊。" },
+          { name: "口播＋剪髮畫面", desc: "<b>總長 23.0 秒：</b>剪髮畫面共 11.5 秒，約占 50%；開頭與結尾保留露臉，聲音全程是口播。" }
+        ] }
+    ] },
+    { title: "剪髮畫面配對練習：這句話配哪段畫面？", blocks: [
+      { t: "p", html: "沒有唯一正解。原則：講到什麼就給看什麼；開頭和結尾通常保留你的臉。" },
+      { t: "match", id: "ub.match", req: "ub.match", title: "剪髮畫面配對", compact: true,
+        options: ["不放，保留我的臉", "剪刀修剪特寫", "電剪操作", "吹整過程", "髮絲細節", "完成造型轉身", "店內環境"].map(x => ({ label: x, short: x })),
+        defaultBad: "和這句話的內容關係不大，觀眾會覺得對不上。",
+        qs: [
+          { q: "「今天這位客人想要剪一個好整理的短髮。」", best: [0, "開頭先露臉說重點，觀眾知道是誰在說話。"], ok: [[5, "也可以先閃一下完成造型當鉤子，再回到臉。"], [6, "也可以用 1 秒店內環境帶出場景，但不要太久。"]] },
+          { q: "「我先用剪刀把外輪廓修出來。」", best: [1, "講剪刀就給看剪刀，觀眾馬上懂你在做什麼。"], ok: [[0, "保留臉也可以，但錯過了展示手法的機會。"]] },
+          { q: "「後面用電剪推出乾淨的層次。」", best: [2, "講電剪就配電剪操作，層次的變化最清楚。"], ok: [[4, "髮絲細節也能看出層次，但不如操作畫面直接。"]] },
+          { q: "「吹整的時候要順著髮流，從髮根吹起。」", best: [3, "畫面直接示範吹整方向，比說的更好懂。"], ok: [[4, "可以接在吹整後面，讓人看到髮流。"]] },
+          { q: "「你看，髮尾的弧度很自然。」", best: [4, "「你看」就是要給看，髮尾特寫最對得上。"], ok: [[5, "轉身也看得到髮尾，只是細節沒那麼清楚。"]] },
+          { q: "「這就是完成的樣子。」", best: [5, "講完成就秀完成造型，是整支片的高潮。"], ok: [[4, "可以先給髮絲細節，再接轉身。"], [0, "露臉搭配完成髮型也可以，看你有沒有拍到。"]] },
+          { q: "「想剪一樣的髮型，歡迎私訊預約。」", best: [0, "結尾露臉說預約，觀眾比較有信任感。"], ok: [[6, "店內環境可以讓人知道店在哪、長怎樣。"], [5, "完成造型再出現一次也可以，但要留時間給預約資訊。"]] }
+        ] }
+    ] },
+    { title: "AI 要遵守的 10 條規則與素材準備", blocks: [
+      { t: "h3", text: "口播＋剪髮畫面剪輯規則（都已寫進指令產生器）" },
+      { t: "list", ordered: true, items: [
+        "分析口播，整理每句話的主題與時間", "刪除停頓、口誤、重複，不改變原意", "依講話內容挑語意相關的剪髮畫面",
+        "在適當時間把剪髮畫面蓋在口播畫面上", "剪髮畫面出現時，口播聲音持續播放", "剪髮畫面不要太密集，保留你面對鏡頭說話",
+        "加入核對過的繁體中文字幕", "節奏自然，適合 Reels、TikTok、Shorts", "輸出 9:16 直式 MP4", "只用真實素材，不改變客人的髮型髮色"
+      ] },
+      { t: "grid2", cards: [
+        { title: "拍口播", list: ["手機直拍，拍到胸口以上", "手機離嘴巴近一點，收音最重要", "講錯直接重講，AI 會刪掉", "一支片講一個重點，30～60 秒就好"] },
+        { title: "拍剪髮畫面", list: ["每段 3～8 秒，拿穩不要晃", "多拍特寫：剪刀、電剪、吹整、髮尾", "一定要拍完成造型轉身", "拍完就把檔名改成內容，AI 最不會配錯"] }
+      ] },
+      { t: "tree", text: "今天的剪髮/\n├── 口播.mp4                ← 你對鏡頭講話\n├── 修髮尾近照.mp4          ← 剪髮畫面：檔名直接寫畫面內容\n├── 剪瀏海近照.mp4\n├── 吹整過程.mp4\n├── 完成造型轉身.mp4\n├── logo.png（選填）\n└── 剪髮成品.mp4            ← AI 剪好後存在這裡" },
+      { t: "callout", title: "剪完一定要播放", html: "AI 有時會挑錯鏡頭、聽錯髮型名稱。拿到 MP4 後，照第 5 單元的四件事檢查。" }
+    ] },
+    { title: "下一步：產生你的口播＋剪髮畫面指令", blocks: [
+      { t: "p", html: "指令產生器已預設「口播＋剪髮畫面」模式，選好長度和 AI，就會產生「自動剪輯要求」；第 5 單元再依你選的路線實際操作。" },
+      { t: "action", label: "用這個案例產生我的剪輯指令 →", action: "gotoGenAroll", req: "ub.gen", cls: "navy" }
+    ] }
+  ]
+};
+
+/* ====================== 第 4 單元（剪輯指令產生器，#u3） ====================== */
+COURSE.pages.u3 = {
+  unit: 4, nav: "剪輯指令產生器", crumb: "第 4 單元：剪輯指令產生器", minutes: 18,
+  title: "做出你自己的 AI 剪輯指令",
+  reqs: [
+    { id: "u3.gen", label: "產生一段自己的剪輯指令" },
+    { id: "u3.copy", label: "複製指令" },
+    { id: "u3.quiz", label: "完成好指令／模糊指令比較" }
+  ],
+  sections: [
+    { title: "選一選，產生你自己的剪輯指令", blocks: [
+      { t: "p", html: "從 A 選到 F，右邊會即時產生「自動剪輯要求」。可以直接修改文字，再按「複製自動剪輯要求」。這個頁面只產生文字；要貼到哪裡、去哪裡拿 MP4，寫在按鈕下方。" },
+      { t: "gen" }
+    ] },
+    { title: "好指令 vs 模糊指令", blocks: [
+      { t: "quiz", id: "u3.quiz", req: "u3.quiz", title: "哪一句比較好？", qs: [
+        { q: "「影片怪怪的，幫我改好一點」", opts: ["好指令", "模糊"], a: 1, ex: "沒說哪一段、什麼問題、要改成怎樣，AI 只能亂猜。" },
+        { q: "「影片前面 5 秒太慢，請改成 2 秒，先放染髮完成的畫面，其他部分不要動。」", opts: ["好指令", "模糊"], a: 0, ex: "有哪一段、有什麼問題、改成什麼、其他不要動，四塊都有。" },
+        { q: "「字幕再好看一點」", opts: ["好指令", "模糊"], a: 1, ex: "「好看」每個人想的不一樣，要說字大小、位置或顏色。" },
+        { q: "「第 12 秒的字幕把『漂髮』改成『挑染』，其他不要動。」", opts: ["好指令", "模糊"], a: 0, ex: "指定時間、指定字、指定改法，AI 不會改到別的地方。" },
+        { q: "「剪得更有質感」", opts: ["好指令", "模糊"], a: 1, ex: "可以改成「節奏放慢，每個畫面停 2 到 3 秒，字幕改成細字白色」。" }
+      ] }
+    ] },
+    { title: "萬用修改句型（第六單元會一直用到）", blocks: [
+      { t: "callout", tone: "navy", title: "哪一段 ＋ 有什麼問題 ＋ 希望改成什麼 ＋ 其他不要動", html: "例：「影片前面 5 秒太慢，請改成 2 秒，先放染髮完成的畫面，其他部分不要動。」" }
+    ] }
+  ]
+};
+
+/* ====================== 第 5 單元（兩條實作路線，#u4） ====================== */
+COURSE.pages.u4 = {
+  unit: 5, nav: "兩條實作路線", crumb: "第 5 單元：兩條實作路線", minutes: 40,
+  title: "跟著做：兩條自動剪輯路線",
+  reqs: [
+    { id: "u4.pick", label: "選好 AI 與路線" },
+    { id: "u4.steps", label: "完成路線步驟" },
+    { id: "u4.quizRoute", label: "完成路線判斷練習" },
+    { id: "u4.quizReply", label: "完成「AI 回覆是哪一種」練習" }
+  ],
+  sections: [
+    { title: "選你的路線與 AI", blocks: [
+      { t: "p", html: "路線 A 是第 1 單元表格的對話和工作模式，路線 B 是電腦上的 Codex（Claude 是電腦上的 Claude Code）。不用兩條都做，選好後，下面的步驟會跟著換。上方工具列也可以隨時切換。" },
+      { t: "routeCards", selectable: true, req: "u4.pick" },
+      { t: "aiPick", req: "u4.pick" },
+      { t: "callout", title: v({ chat: "路線 A 會拿到什麼", agent: "路線 B 會拿到什麼" }), html: v({
+        chat: "對話裡可以下載的 MP4。下載後用手機播放，照第 5 節的四件事檢查；不對就在同一段對話指定秒數請它改。",
+        agent: "「今天的剪髮」資料夾裡的「剪髮成品.mp4」。第一次要先準備剪片和聽寫工具，下面的步驟會帶你做。"
+      }), details: v({ chat: null, agent: { summary: "捨棄做法：雲端 Codex／Claude Code 雲端", html: "雲端版本要先把素材放進 GitHub 專案、在遠端環境裝好剪片工具，成品還要另外取回。設定比較複雜，課堂上由講師示範，學員不實作。" } }) },
+      { t: "prompt", source: "gen", title: "自動剪輯要求（{LEN} 秒，{AI} 版）", copyLabel: "複製自動剪輯要求", after: "{PASTE}" },
+      { t: "quiz", id: "u4.quizRoute", req: "u4.quizRoute", title: "練習：這堂課要選哪條路線？", qs: [
+        { q: "原片很大、每週都要剪，存在店裡電腦的「今天的剪髮」資料夾。", opts: ["路線 A：在 AI 對話裡剪", "路線 B：電腦上的 Codex／Claude Code", "雲端 Codex／Claude Code 雲端（進階）"], a: 1, ex: "大原片直接從資料夾讀，不用切段上傳；剪法也能每週沿用。" },
+        { q: "只有手機，剛拍完一段口播和三段剪髮畫面，想今天剪一支。", opts: ["路線 A：在 AI 對話裡剪", "路線 B：電腦上的 Codex／Claude Code", "雲端 Codex／Claude Code 雲端（進階）"], a: 0, ex: "手機拍完直接在對話裡傳，最快拿到第一版。" }
+      ] }
+    ] },
+    { title: v({ "gpt-chat": "現在的組合：ChatGPT 對話", "claude-chat": "現在的組合：Claude 對話", "gpt-agent": "現在的組合：桌面 Codex 本機", "claude-agent": "現在的組合：Claude Code 本機" }), blocks: [
+      { t: "p", html: v({
+        "gpt-chat": "<b>免費帳號：</b>可以（免費版每天 3 個檔案）",
+        "claude-chat": "<b>免費帳號：</b>可以試，能不能附加影片依帳號而定（課前請先測）",
+        "gpt-agent": "<b>免費帳號：</b>有限度可用（逐步開放）",
+        "claude-agent": "<b>免費帳號：</b>不能，需 Pro 以上"
+      }) },
+      { t: "table", head: ["項目", "目前狀況", "依據"], badgeCol: 2, rows: v({
+        "gpt-chat": [
+          ["怎麼給影片", "按輸入框旁的「＋」選影片；相簿選不到就先存到「檔案」再選", "official"],
+          ["影片大小", "每支最大 512 MB，每支分開計算", "official"],
+          ["剪成 MP4", "有公開案例：剪接、加字幕、交回可下載的 MP4", "public"],
+          ["可能出錯的地方", "挑錯鏡頭、聽錯髮型名稱：下載後一定要播放確認", "public"]
+        ],
+        "claude-chat": [
+          ["怎麼給影片", "把影片拖進對話，或按迴紋針選影片", "official"],
+          ["影片大小", "官方沒有公布影片上限；本帳號附加 58 MB 成功，相機原檔先用 HandBrake 壓成 1080p", "todo"],
+          ["剪成 MP4", "本帳號案例：剪接、裁直式、燒字幕，在對話裡下載 MP4", "public"],
+          ["字幕", "有 SRT 字幕檔就一起傳最穩；想讓它自己聽口播，要在要求裡寫清楚", "todo"]
+        ],
+        "gpt-agent": [
+          ["方案", "免費與 Go 方案在桌面版有限度可用、逐步開放；Plus 以上較穩定", "official"],
+          ["不打指令，用點的選資料夾", "ChatGPT 桌面版左上角選單選「Codex」，選本機任務和資料夾", "official"],
+          ["讀取資料夾、使用剪輯工具、輸出 MP4", "可以，電腦要先有 FFmpeg 等工具（缺的會問你要不要安裝）", "official"],
+          ["Remotion 官方外掛", "可從外掛（Plugins）分頁搜尋 Remotion 安裝", "official"]
+        ],
+        "claude-agent": [
+          ["方案", "需要 Pro、Max、Team 或 Enterprise", "paid"],
+          ["不打指令，用點的選資料夾", "桌面版 Code 分頁可以", "official"],
+          ["讀取資料夾、使用剪輯工具、輸出 MP4", "可以，電腦要先有 FFmpeg 等工具", "official"],
+          ["Remotion 官方外掛", "可從外掛目錄加入", "official"]
+        ]
+      }) },
+      { t: "callout", title: "成果：", html: v({
+        "gpt-chat": "對話裡可以下載的 MP4。",
+        "claude-chat": "對話裡可以下載的 MP4。",
+        "gpt-agent": "「今天的剪髮」資料夾裡的「剪髮成品.mp4」。免費額度可能剪不完一支，額度用完就改看講師示範。",
+        "claude-agent": "「今天的剪髮」資料夾裡的「剪髮成品.mp4」。Claude Code 需 Pro 以上方案，由講師示範；學員可改用 Codex。"
+      }) },
+      { t: "small", html: "查核日期：2026-11-19。方案與功能會變動，以官方說明為準。" },
+      { t: "sources" }
+    ] },
+    { title: "跟著做", blocks: [
+      { t: "steps", id: "u4.steps", req: "u4.steps", items: v({
+        "gpt-chat": [
+          ["步驟 1：打開 ChatGPT", "打開平常聊天的 ChatGPT（App 或 chatgpt.com），開一段新對話。"],
+          ["步驟 2：按「＋」選口播和剪髮畫面", "選一段口播和 3 至 5 段剪髮畫面。相簿裡選不到，先把影片存到手機的「檔案」，再從「檔案」選。每支最大 512 MB，超過就先切成兩段。"],
+          ["步驟 3：貼上自動剪輯要求", "按「複製自動剪輯要求」，貼到對話框送出。"],
+          ["步驟 4：下載對話裡的 MP4", "完成後按對話裡的 MP4 下載，用手機播放，照第 5 節的四件事檢查。"],
+          ["步驟 5：想換鏡頭就直接說", "在同一段對話說「第 8 秒改放剪瀏海的近照」，它會再交一次 MP4。"]
+        ],
+        "claude-chat": [
+          ["步驟 1：打開 Claude", "打開 Claude（App 或 claude.ai）。對話與 Cowork 已合併就從目前對話開始；看得到獨立的 Cowork 就選 Cowork。"],
+          ["步驟 2：把口播和剪髮畫面拖進對話", "或按迴紋針選影片。相機原檔太大，先用 HandBrake 壓成 1080p；有 SRT 字幕檔可以一起傳。"],
+          ["步驟 3：貼上自動剪輯要求", "按「複製自動剪輯要求」，貼上送出（要求裡已寫「依實際口播加上繁體中文字幕」）。"],
+          ["步驟 4：在對話裡下載 MP4", "完成後在對話裡下載 MP4，用手機播放，照第 5 節的四件事檢查。"],
+          ["步驟 5：想換鏡頭就直接說", "在同一段對話說「第 8 秒改放剪瀏海的近照」，它會再交一次 MP4。"]
+        ],
+        "gpt-agent": [
+          ["步驟 1：建立「今天的剪髮」資料夾", "放入 1 段口播和 3 至 5 段剪髮畫面，Logo 選填。檔名寫畫面內容。"],
+          ["步驟 2：打開 Codex，選這個資料夾", "ChatGPT 桌面版左上角選單選「Codex」，選本機任務，再選「今天的剪髮」資料夾。"],
+          ["步驟 3：貼上自動剪輯要求", "結尾已加上存成「剪髮成品.mp4」。缺工具時它會問要不要安裝，看清楚再按允許。"],
+          ["步驟 4：等它剪完", "剪片時電腦保持開機，不要闔上。"],
+          ["步驟 5：打開「剪髮成品.mp4」", "在「今天的剪髮」資料夾找成品，照第 5 節的四件事檢查。"]
+        ],
+        "claude-agent": [
+          ["步驟 1：建立「今天的剪髮」資料夾", "放入 1 段口播和 3 至 5 段剪髮畫面，Logo 選填。檔名寫畫面內容。"],
+          ["步驟 2：打開 Claude 桌面版的 Code 分頁", "左側最上方點「Code」，選「Local（本機）」，再選這個資料夾。"],
+          ["步驟 3：貼上自動剪輯要求", "按「複製自動剪輯要求」貼上。要安裝工具或改檔案時會跳出詢問，看清楚再允許。"],
+          ["步驟 4：等它剪完", "剪片時電腦保持開機，不要闔上。"],
+          ["步驟 5：打開「剪髮成品.mp4」", "在「今天的剪髮」資料夾找成品，照第 5 節的四件事檢查。調好的剪法可以請它存成「技能」，下週一句話就能用。"]
+        ]
+      }) },
+      { t: "prompt", source: "gen", title: "你在第四單元產生的指令（{PLAT}版）", copyLabel: "複製", backToGen: true }
+    ] },
+    { title: "核心案例：口播＋剪髮畫面在這條路線怎麼做", blocks: [
+      { t: "genModeHint" },
+      { t: "table", head: ["項目", "目前狀況", "依據"], badgeCol: 2, rows: v({
+        chat: [
+          ["給影片", v({ chatgpt: "按「＋」選口播和 3 至 5 段剪髮畫面；每支最大 512 MB", claude: "把口播和 3 至 5 段剪髮畫面拖進對話；大檔先用 HandBrake 壓小" }), "official"],
+          ["聽口播、挑畫面", "它會聽你說什麼再挑剪髮畫面；髮型名稱可能聽錯", "public"],
+          ["剪好交回 MP4", "有公開案例：剪接、加字幕、交回 MP4", "public"]
+        ],
+        agent: [
+          ["口播轉逐字稿", "要有語音轉文字工具（例如 Whisper），請它安裝並把逐字稿給你核對", "todo"],
+          ["挑選剪髮畫面", "剪髮畫面檔名寫清楚內容最可靠；若請它看畫面判斷，每段都要確認", "todo"],
+          ["保留連續口播、疊加剪髮畫面", "剪輯工具（FFmpeg）做得到：畫面換成剪髮畫面、聲音保留口播", "official"],
+          ["輸出 9:16 MP4", v({ chatgpt: "Codex 免費額度有限，講師示範前實測", claude: "需付費方案，講師示範前實測" }), "paid"]
+        ]
+      }) },
+      { t: "list", ordered: true, items: v({
+        chat: [v({ chatgpt: "按「＋」選 1 段口播和 3 至 5 段剪髮畫面（每支最大 512 MB）", claude: "把 1 段口播和 3 至 5 段剪髮畫面拖進對話（大檔先壓成 1080p）" }), "貼上自動剪輯要求", "下載對話裡的 MP4，播放檢查四件事", "有一段不對，就說「第 8 秒改放剪瀏海的近照」"],
+        agent: ["照下方資料夾放好原片，檔名寫畫面內容", v({ chatgpt: "在桌面 Codex 選本機任務和這個資料夾，貼上自動剪輯要求", claude: "在 Code 分頁選 Local 和這個資料夾，貼上自動剪輯要求" }), "等它存好「剪髮成品.mp4」", "播放檢查四件事"]
+      }) },
+      { t: "tree", show: "agent", text: "今天的剪髮/\n├── 口播.mp4\n├── 修髮尾近照.mp4、剪瀏海近照.mp4、吹整過程.mp4、完成造型.mp4…\n├── logo.png（選填）\n└── 剪髮成品.mp4   ← AI 剪好後存在這裡" },
+      { t: "callout", title: "成果：", html: v({ chat: "對話裡可以下載的 MP4，播放後照第 5 節檢查。", agent: "「今天的剪髮」資料夾裡的「剪髮成品.mp4」，播放後照第 5 節檢查。" }) },
+      { t: "p", html: "還不熟這個案例？先看<a href=\"#ub\">口播＋剪髮畫面單元</a>。" }
+    ] },
+    { title: "剪完後，打開影片看這四件事", blocks: [
+      { t: "checklist", id: "u4.four", itemsFrom: "fourChecks", numbered: true },
+      { t: "p", html: "哪一項不對，就照這句改（可以直接照抄）：" },
+      { t: "quote", textFrom: "fixExample", copyLabel: "複製修改例句" },
+      { t: "small", html: "勾選只是你自己的紀錄，不代表系統檢查過影片。" }
+    ] },
+    { title: "AI 回覆了，這算哪一種？", blocks: [
+      { t: "p", html: "以下回覆是教學示例。四種情況不能混為一談：只有「已輸出影片」才有成品，而且你仍要自己播放檢查。" },
+      { t: "quiz", id: "u4.quizReply", req: "u4.quizReply", title: "辨識 AI 的回覆", qs: [
+        { q: "「建議開頭 2 秒放完成造型，接著放施作過程 8 秒，最後前後對比 6 秒，片尾 3 秒放預約資訊。」", opts: ["只提供建議", "產生程式但還沒執行", "已輸出影片", "已輸出，但還沒檢查"], a: 0, ex: "這是剪輯計畫，還沒有任何影片檔。" },
+        { q: "「以下是可以完成剪輯的程式，你可以在電腦上執行：ffmpeg -i …」", opts: ["只提供建議", "產生程式但還沒執行", "已輸出影片", "已輸出，但還沒檢查"], a: 1, ex: "給了程式，但沒有人執行，所以還沒有成品。" },
+        { q: "「已完成，影片存成「剪髮成品.mp4」。實際長度 20.1 秒、1080×1920。我抽查了 6 張畫面，字幕沒有超出畫面；第 12 秒的字幕請你再確認。」", opts: ["只提供建議", "產生程式但還沒執行", "已輸出影片", "已輸出，但還沒檢查"], a: 2, ex: "有檔名、實際數字和抽查結果，是真的輸出了。你還是要自己播放確認。" },
+        { q: "「好了！這是你的影片：[下載 reels.mp4]」", opts: ["只提供建議", "產生程式但還沒執行", "已輸出影片", "已輸出，但還沒檢查"], a: 3, ex: "有檔案，但沒有回報長度、解析度或抽查，等於還沒檢查。" },
+        { q: "「我已經幫你剪好了，影片 20 秒，效果很棒！」（沒有任何檔案或連結）", opts: ["只提供建議", "產生程式但還沒執行", "已輸出影片", "已輸出，但還沒檢查"], a: 0, ex: "沒有檔案＝沒有成品。請它給出可下載的檔案，或回報真實原因。" }
+      ] }
+    ] },
+    { title: "卡住了？操作模擬器", blocks: [
+      { t: "p", html: "選你目前遇到的狀況，會依你選的 AI 與路線給對應做法。" },
+      { t: "trouble", id: "u4.trouble" }
+    ] }
+  ]
+};
+
+/* ====================== 第 6 單元（修改影片，#u5） ====================== */
+COURSE.pages.u5 = {
+  unit: 6, nav: "修改影片", crumb: "第 6 單元：修改影片", minutes: 18,
+  title: "用中文叫 AI 修改影片",
+  reqs: [
+    { id: "u5.edits", label: "產生 3 個以上的修正指令" },
+    { id: "u5.sentence", label: "認識萬用修改句型" }
+  ],
+  sections: [
+    { title: "拆解萬用修改句型", blocks: [
+      { t: "p", html: "點句子的每一塊，看它屬於句型的哪個部分。" },
+      { t: "sentence", id: "u5.sentence", req: "u5.sentence", parts: [
+        ["影片前面 5 秒", "哪一段", "#2563eb"], ["太慢", "有什麼問題", "#c0392b"],
+        ["請改成 2 秒，先放染髮完成的畫面", "希望改成什麼", "#0e8f7e"], ["其他部分不要動", "其他不要動", "#c27c0e"]
+      ] }
+    ] },
+    { title: "找出問題 → 選擇修改 → 產生修正指令", blocks: [
+      { t: "p", html: "至少做 3 題。產生的指令可以直接貼回 ChatGPT、Claude、Codex 或 Claude Code。" },
+      { t: "editPractice", id: "u5.edit", req: "u5.edits", reqMin: 3 }
+    ] }
+  ]
+};
+
+/* ====================== 第 7 單元（發布前檢查，#u6） ====================== */
+COURSE.pages.u6 = {
+  unit: 7, nav: "發布前檢查", crumb: "第 7 單元：發布前檢查", minutes: 15,
+  title: "輸出與發布前檢查",
+  reqs: [{ id: "u6.publish", label: "完成發布前人工檢查" }],
+  sections: [
+    { title: "人工檢查：一項一項自己確認", blocks: [
+      { t: "publishCheck", id: "u6.publish", req: "u6.publish" },
+      { t: "small", html: "這是你自己勾選的紀錄，不代表系統檢查過影片。" }
+    ] },
+    { title: "AI 自我檢查（Agent 路線才做得到）", blocks: [
+      { t: "p", html: "Codex 或 Claude Code 可以用工具實際量測影片。這和你的人工勾選是兩件事：量測只能確認數字，字幕對不對、客人同不同意、音樂有沒有授權，還是要你判斷。" },
+      { t: "code", title: "請 AI 量測成品", text: "請檢查這個資料夾裡的「剪髮成品.mp4」，並回報實際數字：\n1. 實際長度（秒）\n2. 解析度與方向（是否 1080×1920 直式）\n3. 有沒有黑畫面或無聲段落\n4. 每 3 秒擷取一張畫面，確認字幕沒有超出畫面或擋住頭髮\n5. 列出所有字幕文字讓我校對\n只回報你實際量到的結果；做不到的項目請直接說做不到。" }
+    ] }
+  ]
+};
+
+/* ====================== 第 8 單元（成果與課後，#u7） ====================== */
+COURSE.pages.u7 = {
+  unit: 8, nav: "成果與課後", crumb: "第 8 單元：成果與課後", minutes: 12,
+  title: "成果分享與回家怎麼繼續",
+  reqs: [{ id: "u7.hw", label: "選好課後作業" }],
+  sections: [
+    { title: "成果分享", blocks: [
+      { t: "list", items: ["拿出你的成品（MP4 或剪輯計畫），說一句：你用了哪個 AI、哪條路線。", "大家用萬用句型，各給一個修改建議。", "沒有 MP4 也很正常：剪輯計畫和字幕稿就是路線 A 的成果。"] }
+    ] },
+    { title: "回家作業：選一項", blocks: [
+      { t: "homework", id: "u7.hw", req: "u7.hw", items: [
+        { label: "再剪一支同類型的影片，練熟流程", html: "用同一段指令，只換素材。到<a href=\"#review\">「課後複習」</a>可以隨時找回你的指令範本。" },
+        { label: "換一種主題（例如燙髮或優惠宣傳）", html: "回到<a href=\"#u3\">指令產生器</a>，在 C 換成「燙髮過程」或「店家優惠宣傳」，重新產生指令；拍攝前先想好每一句要配什麼畫面。" },
+        { label: "把剪法存成「技能」，下次一句話就能用（需要 Agent 路線）", html: "在 Codex 或 Claude Code 裡說：「請把我們這次的剪輯流程存成可以重複使用的技能，名稱叫 salon-reels。」Claude Code 存好後輸入 /salon-reels 就能叫出來。" }
+      ] }
+    ] },
+    { title: "你的學習進度", blocks: [
+      { t: "progressCards" },
+      { t: "p", html: "前往課後複習：工具速查、常用指令、範本、錯誤排除、檢查清單都在那裡。" },
+      { t: "action", label: "前往課後複習 →", href: "#review", cls: "navy" }
+    ] }
+  ]
+};
+
+/* ============================== 課後複習 ============================== */
+COURSE.pages.review = {
+  nav: "課後複習", crumb: "課後複習", tag: "複習", title: "課後複習：需要什麼直接找",
+  lead: "不用重看整堂課。選一個分頁。",
+  blocks: [
+    { t: "tabs", id: "review.tabs", plain: true, tabs: [
+      { label: "剪完檢查", blocks: [
+        { t: "p", html: "剪完後，打開影片看這四件事：" },
+        { t: "checklist", id: "u4.four", itemsFrom: "fourChecks", numbered: true },
+        { t: "p", html: "哪一項不對，就照這句改（可以直接照抄）：" },
+        { t: "quote", textFrom: "fixExample", copyLabel: "複製修改例句" },
+        { t: "small", html: "勾選只是你自己的紀錄，不代表系統檢查過影片。" }
+      ] },
+      { label: "美髮指令範本", blocks: [{ t: "templates" }] },
+      { label: "常用修改句", blocks: [{ t: "fixList" }] },
+      { label: "兩條路線步驟", blocks: [{ t: "allSteps" }] },
+      { label: "常見錯誤", blocks: [{ t: "troubleAccordion" }] },
+      { label: "發布前檢查", blocks: [{ t: "publishCheck", id: "u6.publish" }, { t: "small", html: "與第七單元同步。" }] },
+      { label: "AI 工具速查", blocks: [
+        { t: "table", head: ["工具", "類型", "一句話", "本課用途"], rows: [
+          ["ChatGPT・Claude", "AI 助理", "會幫你思考的 AI 助理", "寫口播、在對話裡剪好交回 MP4（做法見第 1 單元）"],
+          ["Codex", "執行型 Agent", "會使用電腦工具做事的 AI 執行助手", "在電腦上實際剪輯（免費有限度）"],
+          ["Claude Code", "執行型 Agent", "會使用電腦工具做事的 AI 執行助手", "在電腦上實際剪輯（講師示範）"],
+          ["Grok Bot", "雲端 Agent", "可以交辦事情的 AI 數位員工", "認識雲端 Agent，不實作"]
+        ] }
+      ] },
+      { label: "名詞", blocks: [
+        { t: "table", head: ["名詞", "意思"], rows: [
+          ["AI 助理", "你問它答、幫你想和寫，例如 ChatGPT、Claude"],
+          ["Agent（代理）", "會自己規劃並實際執行多個步驟的 AI，例如 Codex、Claude Code"],
+          ["9:16", "直式短影音的比例"],
+          ["MP4", "最常見的影片檔格式，可以直接上傳社群"],
+          ["FFmpeg", "AI 在背後用的剪輯工具，你不用學"],
+          ["Remotion", "AI 在背後用的影片製作工具，可做字卡、片頭片尾"],
+          ["外掛（Plugin）", "讓 Codex 或 Claude Code 多學會一種工具"],
+          ["技能（Skill）", "存好的一套做法，下次一句話就能用"],
+          ["渲染／輸出", "把剪好的設定實際做成影片檔"]
+        ] }
+      ] }
+    ] }
+  ]
+};
+
+/* ============================== 講師專區 ============================== */
+COURSE.pages.teacher = {
+  nav: "講師專區", crumb: "講師專區", tag: "講師", title: "講師專區", teacherOnly: true,
+  lead: "課程時間、課前測試、技術附錄與備援流程。",
+  intro: [{ t: "callout", tone: "amber", title: "這不是有密碼保護的區域", html: "只是介面切換，學員也能點開。請不要放帳號密碼等私人資料。" }],
+  sections: [
+    { title: "課程時間", blocks: [
+      { t: "tabs", id: "teacher.time", tabs: [
+        { label: "150 分鐘版", blocks: [{ t: "table", head: ["時間", "內容", "方式"], rows: [
+          ["00:00–00:12", "認識 AI", "工具卡、比較切換、情境配對"],
+          ["00:12–00:22", "AI 自動剪輯可以做什麼", "剪輯策略模擬"],
+          ["00:22–00:37", "核心案例：口播＋剪髮畫面", "時間軸模擬、剪髮畫面配對"],
+          ["00:37–00:55", "建立自己的 AI 剪輯指令", "互動指令產生器（預設口播＋剪髮畫面）"],
+          ["00:55–01:05", "休息", ""],
+          ["01:05–01:45", "核心實作：直接對話／桌面 Agent", "選擇路線跟著操作，以口播＋剪髮畫面為主"],
+          ["01:45–02:03", "用中文要求 AI 修改影片", "修正指令練習"],
+          ["02:03–02:18", "輸出與發布前檢查", "互動檢查表"],
+          ["02:18–02:30", "成果展示與課後延伸", "分享與回饋"]
+        ] }] },
+        { label: "120 分鐘版", blocks: [
+          { t: "callout", html: "Agent 安裝改到課前完成，課堂直接從實作開始。" },
+          { t: "table", head: ["時間", "內容", "方式"], rows: [
+            ["00:00–00:10", "認識 AI", "工具卡、比較切換"],
+            ["00:10–00:18", "AI 自動剪輯可以做什麼", "剪輯策略模擬"],
+            ["00:18–00:30", "核心案例：口播＋剪髮畫面", "時間軸模擬"],
+            ["00:30–00:45", "建立自己的 AI 剪輯指令", "互動指令產生器"],
+            ["00:45–00:50", "休息", ""],
+            ["00:50–01:25", "核心實作（Agent 已於課前安裝）", "選擇路線跟著操作"],
+            ["01:25–01:40", "用中文要求 AI 修改影片", "修正指令練習"],
+            ["01:40–01:52", "輸出與發布前檢查", "互動檢查表"],
+            ["01:52–02:00", "成果展示", "分享"]
+          ] }
+        ] },
+        { label: "180 分鐘版", blocks: [
+          { t: "callout", html: "加入照片與影片混合剪輯、第二種短影音、學員作品修改、店家風格範本。" },
+          { t: "table", head: ["時間", "內容", "方式"], rows: [
+            ["00:00–00:12", "認識 AI", "工具卡、比較切換、情境配對"],
+            ["00:12–00:22", "AI 自動剪輯可以做什麼", "剪輯策略模擬"],
+            ["00:22–00:37", "核心案例：口播＋剪髮畫面", "時間軸模擬、剪髮畫面配對"],
+            ["00:37–00:55", "建立自己的 AI 剪輯指令", "互動指令產生器"],
+            ["00:55–01:05", "休息", ""],
+            ["01:05–01:45", "核心實作：直接對話／桌面 Agent", "選擇路線跟著操作"],
+            ["01:45–02:05", "照片與影片混合剪輯、第二種短影音", "延伸實作"],
+            ["02:05–02:25", "學員作品修改", "修正指令練習＋講師點評"],
+            ["02:25–02:40", "店家風格範本", "把剪法存成技能／範本"],
+            ["02:40–02:52", "輸出與發布前檢查", "互動檢查表"],
+            ["02:52–03:00", "成果展示與課後延伸", "分享與回饋"]
+          ] }
+        ] }
+      ] }
+    ] },
+    { title: "課前測試（宣稱學員可實作前必做）", blocks: [
+      { t: "p", html: "原則：不要只看 AI 說「任務完成」，一定要實際播放輸出的檔案。沒驗證的項目，上課時要說「待實測」。" },
+      { t: "testList", groups: [
+        ["免費帳號", ["用全新的 ChatGPT 免費帳號上傳 3 段範例影片：能否上傳、一天幾個、能否輸出 MP4、中文字幕品質", "用全新的 Claude 免費帳號確認：不能上傳影片時，學員看到的畫面與提示"]],
+        ["對話比較", ["同一份素材與指令，比較 ChatGPT 與 Claude：理解程度、是否實際剪輯、是否能修改"]],
+        ["Codex", ["免費帳號的 ChatGPT 桌面版是否已出現 Codex；免費額度能否剪完一支 20 秒短片", "安裝 Remotion 外掛（外掛分頁搜尋 Remotion），用 $remotion 測試"]],
+        ["Claude Code", ["付費帳號：Code 分頁選資料夾、安裝 Remotion 外掛、輸出 MP4、修改一次"]],
+        ["Agent 共通", ["FFmpeg、中文字型、繁體字幕、原始檔不被覆蓋、實際播放成品"]],
+        ["Work／Cowork", ["用同一批口播＋剪髮畫面素材實測 Work 與 Cowork，記錄素材提供方式、使用的工具、成品位置與所需方案"]],
+        ["Claude 對話附加影片", ["確認學員的免費帳號能否把影片附加到 Claude 對話（本帳號 2026-09 可附加 58MB）"]],
+        ["ChatGPT Work 案例", ["補齊 Work 出片案例的紀錄：帳號方案、入口、素材交付方式、使用的工具、成品位置"]],
+        ["口播＋剪髮畫面", ["ChatGPT 對話：上傳口播影片，能否聽懂中文口播、時間碼是否對得上（自己核對）", "Agent：語音轉文字工具的中文準確度，逐字稿要人工核對", "Agent：剪髮畫面疊上後口播音訊是否完整連續、沒有被剪髮畫面原音蓋掉", "Agent：依檔名選剪髮畫面與依畫面判斷的準確度比較；畫面判斷結果要逐段確認"]],
+        ["教室", ["網路速度、學員筆電（Windows／Mac）、安裝權限、範例素材檔案大小", "沒有筆電的學員：改用手機做路線 A（ChatGPT App 上傳影片）"]]
+      ] }
+    ] },
+    { title: "技術附錄：Agent 環境設定", blocks: [
+      { t: "h3", text: "Codex（ChatGPT 桌面版）＋ Remotion" },
+      { t: "list", ordered: true, items: ["開 ChatGPT 桌面版，從左上角選單選「Codex」，選本機資料夾（本機任務）", "到外掛（Plugins）分頁搜尋「Remotion」安裝", "在專案中輸入 $remotion，出現建議時接受外掛", "用中文描述影片"] },
+      { t: "small", html: "免費與 Go 方案只在桌面版有限度可用、逐步開放；終端機版 Codex 從 Plus 開始。" },
+      { t: "h3", text: "Claude Code（Claude 桌面版）＋ Remotion" },
+      { t: "list", ordered: true, items: ["Claude 桌面版左側點「Code」，選 Local 與資料夾", "外掛（Plugins）→ Add → Add marketplace，輸入 remotion-dev/claude-code-plugin 後按 Sync", "從目錄安裝 Remotion 外掛，重新開始工作階段", "用中文描述影片"] },
+      { t: "small", html: "需 Pro、Max、Team 或 Enterprise。" },
+      { t: "code", title: "Claude Code 終端機安裝方式（替代做法）", text: "claude plugin marketplace add remotion-dev/claude-code-plugin\nclaude plugin install remotion@remotion" },
+      { t: "code", title: "請 Agent 檢查並安裝 FFmpeg、Node.js、中文字型", text: "請幫我檢查這台電腦是否已有剪輯短影音需要的工具：FFmpeg、Node.js、可用的繁體中文字型。缺少的請一步步說明要安裝什麼，每一步先告訴我，等我同意後再執行。完成後顯示各工具的版本。" },
+      { t: "p", html: "<b>字幕：</b>若要依說話自動產生字幕，需要語音轉文字工具（例如 Whisper），可請 Agent 安裝；中文辨識結果一定要人工校對。" }
+    ] },
+    { title: "付費示範與備援流程", blocks: [
+      { t: "table", head: ["情況", "做法"], rows: [
+        ["付費示範", "講師用 Claude Code 從資料夾到 MP4 完整跑一次；可再示範把剪法存成技能（例如 /salon-reels）。"],
+        ["Codex 沒出現或額度用完", "學員改看講師示範，自己完成路線 A 的剪輯計畫。"],
+        ["ChatGPT 對話無法輸出 MP4", "保留剪輯計畫，課後用手機 App 照計畫剪（AI 輔助剪輯）。"],
+        ["沒有筆電", "用手機 ChatGPT App 上傳影片做路線 A。"],
+        ["網路慢", "改用講師準備的小檔案範例素材。"]
+      ] }
+    ] },
+    { title: "進階內容（不給學員操作）", blocks: [
+      { t: "list", items: [
+        "<b>剪輯清單（TSV）：</b>可請 Agent 先把每段起訖時間寫成表格給你審，再算圖，修改更精準。",
+        "<b>長片切短片：</b>請 Agent 先列候選段落與理由，挑選後再剪。",
+        "<b>Remotion 每日範本：</b>把店家版型做成專案，之後只換資料就出新片。",
+        "<b>Codex Cloud／Claude Code 雲端工作階段：</b>任務跑在 OpenAI 或 Anthropic 的遠端環境，筆電闔上也會繼續；需要 GitHub 專案與付費方案，素材、工具、成品取回都要事先準備。",
+        "<b>ChatGPT 工作模式（Work）／Claude Cowork：</b>適合多步驟工作，例如親自操作網站並回報結果；若要演示影片輸出，須先用同一批素材實測取得可播放的 MP4。"
+      ] }
+    ] },
+    { title: "官方資料（查核日期 2026-11-19）", blocks: [
+      { t: "links", items: [
+        ["OpenAI：在 ChatGPT 方案中使用 Codex", "https://help.openai.com/"],
+        ["OpenAI：ChatGPT Work and Codex", "https://openai.com/"],
+        ["OpenAI Codex 開發者文件", "https://developers.openai.com/codex"],
+        ["Claude Code 桌面版快速開始", "https://docs.claude.com/en/docs/claude-code/overview"],
+        ["Claude Code 雲端工作階段（方案）", "https://docs.claude.com/en/docs/claude-code/overview"],
+        ["Claude：可上傳的檔案類型", "https://support.claude.com/"],
+        ["Claude：程式執行與檔案製作", "https://support.claude.com/"],
+        ["Claude：Cowork 與對話合併（2026-09-16）", "https://www.anthropic.com/news"],
+        ["Remotion：AI 外掛", "https://www.remotion.dev/docs/ai/"],
+        ["Remotion：Claude Code 外掛", "https://www.remotion.dev/docs/ai/claude-code-plugin"],
+        ["Grok Bot（xAI）", "https://x.ai/"],
+        ["FFmpeg", "https://ffmpeg.org/"]
+      ] },
+      { t: "small", html: "連結指向各官方網站或文件首頁；上課前請再確認最新頁面。" }
+    ] }
+  ]
+};
+
+/* ==================== 指令產生器的選項與文字 ==================== */
+COURSE.generator = {
+  modes: [{ key: "aroll", label: "口播＋剪髮畫面（核心）" }, { key: "multi", label: "多段素材串接" }],
+  themes: {
+    "染髮前後對比": { aroll: "這支影片的主題是「染髮前後對比」，挑剪髮畫面時優先找看得出前後差異的畫面。",
+      material: "染髮前、染髮過程、染髮完成三段影片", order: "開頭 2 秒先放染髮完成的亮點，接著放施作過程，最後做染髮前後對比。" },
+    "燙髮過程": { aroll: "這支影片的主題是「燙髮過程」，講到上捲、加熱、拆捲時，配對應的過程畫面。",
+      material: "燙髮前、上捲過程、燙髮完成三段影片", order: "開頭 2 秒先放燙好的捲度，接著依序放上捲、加熱、拆捲，最後展示完成造型。" },
+    "剪髮作品展示": { aroll: "這支影片的主題是「剪髮作品展示」，完成造型的畫面要留得夠久。",
+      material: "剪髮過程與完成造型的影片", order: "開頭 2 秒先放完成造型，接著放剪髮精華，最後讓客人轉身展示。" },
+    "美髮教學": { aroll: "這支影片的主題是「美髮教學」，每講一個步驟，就配那個步驟的手法特寫。",
+      material: "美髮教學的操作影片", order: "挑出最重要的三個操作步驟，依照步驟順序排列，每一步都要看得清楚手法。" },
+    "店家優惠宣傳": { aroll: "這支影片的主題是「店家優惠宣傳」，講到優惠內容時保留我的臉，講到作品時再穿插畫面。",
+      material: "店內環境、施作過程與作品的影片", order: "開頭 2 秒先放最吸睛的作品，中段介紹優惠內容，最後清楚寫出優惠期限與預約方式。" },
+    "客人改造紀錄": { aroll: "這支影片的主題是「客人改造紀錄」，講到改造前後時，配客人改造前與完成的畫面。",
+      material: "客人改造前、過程、改造後的影片", order: "開頭先放改造後的樣子吸引目光，再倒敘改造前與過程，最後放客人滿意的反應。" }
+  },
+  styles: {
+    "快節奏、吸睛": "風格：快節奏、吸睛：每個畫面 1 到 2 秒，剪接俐落、字幕有力。",
+    "韓系質感": "風格：韓系質感：畫面乾淨柔和、節奏舒服、字幕簡潔。",
+    "高級沙龍風": "風格：高級沙龍風：節奏從容、畫面精緻，重點放在髮絲光澤。",
+    "真實自然": "風格：真實自然：保留現場感，不加花俏特效。",
+    "教學解說風格": "風格：教學解說：節奏穩定，每個步驟配一行說明字幕。"
+  },
+  lengths: [15, 20, 30],
+  features: [
+    { key: "sub", label: "繁體中文字幕" }, { key: "cut", label: "自動刪除停頓" }, { key: "trans", label: "轉場" },
+    { key: "shop", label: "店名" }, { key: "logo", label: "Logo" }, { key: "outro", label: "預約片尾" }, { key: "music", label: "有授權的背景音樂" }
+  ],
+  featureText: {
+    aroll: { cut: "刪除停頓、口誤和重複的句子，不改變原意。", trans: "畫面之間用簡單、自然的轉場，不要花俏特效。", shop: "畫面角落放店名「＿＿＿」。",
+      logo: "在畫面右上角放我提供的 Logo（logo.png），不要擋到頭髮。", outro: "最後加 3 秒預約片尾，文字是「歡迎私訊預約」。",
+      music: "背景音樂只用我提供、有授權的音樂，音量要比口播小。", sub: "依實際口播加上繁體中文字幕，避開臉和剪刀，", subEnd: "最後交回能下載、能播放的 MP4。", noSubEnd: "最後交回能下載、能播放的 MP4。" },
+    multi: { cut: "刪除停頓、重複和不清楚的片段。", sub: "加上繁體中文字幕，字要大、不要擋住頭髮；店名與專有名詞請先讓我確認。",
+      trans: "片段之間用簡單、自然的轉場，不要花俏特效。", shop: "畫面角落放店名「＿＿＿」。", logo: "在畫面右上角放我提供的 Logo（logo.png），不要擋到頭髮。",
+      outro: "最後加 3 秒預約片尾，文字是「歡迎私訊預約」。", music: "背景音樂只用我提供、有授權的音樂，音量不要蓋過畫面現場感。" }
+  },
+  arollCore: "以我對鏡頭說話的影片為主，根據我實際講的內容，自動從其他原片挑 3 至 5 段剪髮、吹整或完成造型的畫面穿插。找不到對應畫面時，繼續用我說話的鏡頭。換畫面時保留我的口播原聲，關掉插入片段的現場聲。",
+  multiGeneric: { material: "我提供的幾段美髮影片", order: "先放最好看的成果，再依序放過程，最後放完成造型。" },
+  protect: "不要改變客人真實的髮型與髮色，不要產生不存在的畫面。",
+  agentPrefix: "素材在目前這個資料夾裡。",
+  agentRules: "執行規則：\n1. 先列出資料夾裡的影片與長度，確認可用的影片處理工具（例如 FFmpeg、Remotion）；缺工具時先說明要安裝什麼，等我同意。\n2. 先給我剪輯計畫，我確認後再實際剪輯。\n3. 把 9:16 MP4 存成這個資料夾裡的「剪髮成品.mp4」，絕對不要覆蓋原始影片。\n4. 輸出後回報實際長度、解析度，並抽查幾張畫面。\n5. 如果失敗，請回報真實原因，不要說已完成。",
+  /* 指令品質回饋：test 是用來檢查文字的規則（正規表示式） */
+  quality: [
+    { label: "有指定片長", test: "\\d+\\s*秒", tip: "加上「剪成 30 秒」這類長度。", modes: ["aroll", "multi"] },
+    { label: "有指定直式 9:16", test: "直式|9:16", tip: "加上「直式 9:16」。", modes: ["aroll", "multi"] },
+    { label: "有交代字幕", test: "字幕", tip: "加上「加上繁體中文字幕」。", modes: ["aroll", "multi"] },
+    { label: "有說要交回 MP4", test: "MP4|mp4", tip: "加上「完成後請交回可以播放的 MP4」。", modes: ["aroll", "multi"] },
+    { label: "換畫面時保留口播、插入片段靜音", test: "保留.{0,6}口播|口播原聲|現場聲", tip: "加上「換畫面時保留我的口播原聲，關掉插入片段的現場聲」。", modes: ["aroll"] },
+    { label: "有交代找不到畫面時怎麼辦", test: "找不到", tip: "加上「找不到對應畫面時，繼續用我說話的鏡頭」。", modes: ["aroll"] },
+    { label: "字幕不擋重點", test: "避開|不要擋|不擋", tip: "加上「字幕避開臉和剪刀」。", modes: ["aroll"] }
+  ],
+  legend: [["mode", "剪輯模式"], ["theme", "主題"], ["length", "長度"], ["style", "風格"], ["feat", "功能"], ["plat", "路線與平台"], ["protect", "固定保護"]],
+  defaults: { mode: "aroll", theme: null, style: null, len: 30, custom: 45, feats: ["sub"] }
+};
+
+/* ==================== 卡關處理（第 5 單元模擬器與課後「常見錯誤」共用） ==================== */
+COURSE.troubles = [
+  { q: "剪髮畫面配錯畫面，或 AI 說它「看過」畫面", a: {
+    "gpt-chat": "在同一段對話指定秒數和要換的畫面，例如「第 8 秒改放剪瀏海的近照」。AI 說「看過」不代表真的看懂，一定要自己播放確認。",
+    "claude-chat": "上傳前把檔名改成畫面內容（例如「剪瀏海近照.mp4」），再指定秒數請它換。它說「看過」畫面時，請它描述那段畫面的內容來核對。",
+    "gpt-agent": "剪髮畫面檔名寫清楚內容最不會配錯。請 Codex 先列出它打算在每一秒放哪個檔案，你確認後再剪。",
+    "claude-agent": "剪髮畫面檔名寫清楚內容（例如「剪瀏海近照.mp4」）最不會配錯。若請它看畫面判斷，每段都要確認。" } },
+  { q: "找不到影片上傳的位置", a: {
+    "gpt-chat": "按輸入框旁的「＋」，選「照片」或「檔案」。相簿裡選不到影片，就先存到手機的「檔案」再選。",
+    "claude-chat": "把影片直接拖進對話，或按輸入框旁的迴紋針。手機 App 找不到時，改用電腦開 claude.ai。",
+    "gpt-agent": "Agent 不用上傳：把影片放進「今天的剪髮」資料夾，在 Codex 選本機任務再選這個資料夾。",
+    "claude-agent": "Agent 不用上傳：把影片放進資料夾，在 Code 分頁選「Local」再選資料夾。" } },
+  { q: "上傳時顯示格式不支援", a: {
+    "gpt-chat": "改從手機的「檔案」選影片，或先轉成 MP4（H.264）再傳。iPhone 可以在設定把相機格式改成「最相容」。",
+    "claude-chat": "先用 HandBrake 把影片轉成 1080p 的 MP4 再傳；你的帳號若不能附加影片，就改走路線 B 或用 ChatGPT。",
+    "gpt-agent": "請它回報是哪個檔案讀不到、錯誤訊息是什麼，再請它用 FFmpeg 轉成 MP4（先問你同意）。",
+    "claude-agent": "請它回報是哪個檔案讀不到、錯誤訊息是什麼。" } },
+  { q: "顯示額度不足或要等一段時間", a: {
+    "gpt-chat": "免費版每天 3 個檔案，用完要等隔天。可以先把口播和剪髮畫面合併成較少檔案，或先做剪輯計畫。",
+    "claude-chat": "免費版用量比較少，額度到了要等幾小時。先用短一點的影片測試，或把剪輯計畫寫好下次再剪。",
+    "gpt-agent": "免費額度有限、逐步開放。額度用完就改看講師示範，自己先完成路線 A 的剪輯計畫。",
+    "claude-agent": "付費方案也有用量上限。剪片很耗用量，可以先做短一點的片長測試。" } },
+  { q: "AI 只給我文字說明，沒有影片", a: {
+    "gpt-chat": "在同一段對話說「請直接剪好，交回可以下載的 MP4」。還是不行，就保留剪輯計畫，用手機 App 照計畫剪（AI 輔助剪輯）。",
+    "claude-chat": "請它「實際剪好並在對話裡提供 MP4 下載」。看得到 Cowork 就改用 Cowork 交辦。",
+    "gpt-agent": "確認你是在 Codex 的本機任務、選了資料夾，不是一般聊天。再說一次「請實際執行剪輯並存成剪髮成品.mp4」。",
+    "claude-agent": "也確認你是在 Code 分頁、選了 Local 和資料夾，不是在一般 Chat 分頁。" } },
+  { q: "AI 說完成了，但我找不到 MP4", a: {
+    "gpt-chat": "對話裡要有可以點的檔案連結才算完成。沒有的話，請它「把 MP4 檔案直接附在對話裡」。",
+    "claude-chat": "看對話裡有沒有檔案卡片或下載按鈕。沒有就請它重新輸出，並回報檔名和長度。",
+    "gpt-agent": "請它回報檔案的完整路徑，並在「今天的剪髮」資料夾裡找「剪髮成品.mp4」。",
+    "claude-agent": "請它回報檔案的完整路徑和實際長度；沒有檔案就不算完成，請它說明真實原因。" } },
+  { q: "Agent 要求存取資料夾，我不知道該不該按", a: {
+    "gpt-chat": "一般對話不會要求存取你的資料夾。如果跳出這種要求，先停下來，確認你用的是哪個工具。",
+    "claude-chat": "一般對話不會存取你電腦的資料夾。若跳出連接器或權限要求，看清楚是哪個服務再決定。",
+    "gpt-agent": "只允許「今天的剪髮」資料夾；要刪除檔案或安裝東西時，看清楚它說要做什麼再按允許。",
+    "claude-agent": "開始時只選剪片資料夾，不要選整個桌面或使用者資料夾。" } },
+  { q: "它說剪輯工具還沒安裝", a: {
+    "gpt-chat": "一般對話不用你安裝工具。如果它這樣說，請它「直接在對話裡處理影片」，或改走路線 B。",
+    "claude-chat": "一般對話不用你安裝工具。如果它只給你安裝步驟，請它直接處理影片，或改走路線 B。",
+    "gpt-agent": "讓 Codex 說明要安裝什麼（例如 FFmpeg），每一步先問你同意再裝。最好課前就由講師確認好。",
+    "claude-agent": "FFmpeg、中文字型、Remotion 外掛最好課前就由講師確認好。" } },
+  { q: "中文字幕有錯字或變成簡體", a: {
+    "gpt-chat": "說「第 X 秒的字幕把『A』改成『B』，全部字幕都用繁體中文，其他不要動」。髮型名稱可以先列給它。",
+    "claude-chat": "把正確的髮型名稱和店名先列給它，或直接提供 SRT 字幕檔一起傳，再請它重新燒字幕。",
+    "gpt-agent": "請它先把逐字稿給你校對，改好再燒字幕。字幕變成方塊通常是缺中文字型。",
+    "claude-agent": "字幕變成方塊通常是缺中文字型，請它安裝或改用電腦裡已有的中文字型。" } },
+  { q: "影片輸出失敗", a: {
+    "gpt-chat": "先把影片剪短（例如只用 15 秒）或減少檔案數再試一次；同一段對話說「請重新輸出，並告訴我失敗原因」。",
+    "claude-chat": "影片太大是最常見原因，先壓成 1080p 再試；請它回報真實的錯誤原因，不要只說「完成了」。",
+    "gpt-agent": "請它回報真實原因和錯誤訊息，常見是磁碟空間不足或檔案格式問題。",
+    "claude-agent": "請它回報真實原因；常見是磁碟空間不足、字型缺少或素材格式問題，修好再輸出一次。" } }
+];
+
+/* ==================== 修改練習（第 6 單元）==================== */
+/* params：每個參數的選項；text 用 {0}{1} 代入；after：修改後的時間軸（可依參數改變） */
+COURSE.editPractice = {
+  before: [["開頭", 6, "#8a6a4f"], ["過程", 8, "#b5476b"], ["對比", 4, "#c98a4b"], ["片尾", 2, "#1b2f5e"]],
+  problems: [
+    { label: "開頭太長", params: [["開頭縮短到", ["2 秒", "3 秒"]], ["開頭先放", ["染髮完成的畫面", "前後對比畫面"]]],
+      text: "影片開頭目前太長，請縮短到 {0}，開頭先放{1}，後面其他部分保持不變。", after: s => [["開頭", parseInt(s[0]), "#c98a4b"], ["過程", 8, "#b5476b"], ["對比", 4, "#c98a4b"], ["片尾", 2, "#1b2f5e"]] },
+    { label: "影片節奏太慢", params: [["每個畫面最多停留", ["2 秒", "3 秒"]]],
+      text: "整支影片節奏太慢，請讓每個畫面最多停留 {0}，順序和字幕內容不要動。", after: s => s[0] === "2 秒" ? [["開頭", 3, "#8a6a4f"], ["過程", 5, "#b5476b"], ["對比", 3, "#c98a4b"], ["片尾", 2, "#1b2f5e"]] : [["開頭", 4, "#8a6a4f"], ["過程", 6, "#b5476b"], ["對比", 4, "#c98a4b"], ["片尾", 2, "#1b2f5e"]] },
+    { label: "字幕有錯字", params: [["大約在", ["第 8 秒", "第 12 秒"]], ["怎麼改", ["「分析室」改成「染髮師」", "「漂髮」改成「挑染」"]]],
+      text: "{0}左右的字幕，把{1}，全部字幕都用繁體中文，其他不要動。", note: "時間軸不變，只改字幕文字。" },
+    { label: "字幕蓋住客人的頭髮", params: [["字幕移到", ["畫面上方", "畫面下方，縮小一點"]]],
+      text: "字幕擋到客人的頭髮了，請把字幕移到{0}，不要蓋到頭髮，其他不要動。", note: "時間軸不變，只改字幕位置。" },
+    { label: "前後對比不夠清楚", params: [["改成", ["左右分割畫面，同時顯示前後", "前後畫面快速切換三次"]]],
+      text: "前後對比不夠清楚，請改成{0}，對比段落的秒數不變，其他部分不要動。", note: "對比段落換成新的呈現方式，長度不變。" },
+    { label: "結尾沒有預約資訊", params: [["片尾長度", ["3 秒", "5 秒"]], ["片尾文字", ["歡迎私訊預約", "點連結線上預約"]]],
+      text: "影片最後加上 {0}的片尾，文字是「{1}」，字要大、放在畫面中間，前面內容不要動。",
+      before: [["開頭", 6, "#8a6a4f"], ["過程", 8, "#b5476b"], ["對比", 6, "#c98a4b"]],
+      after: s => [["開頭", 6, "#8a6a4f"], ["過程", 8, "#b5476b"], ["對比", 6, "#c98a4b"], ["片尾", parseInt(s[0]), "#1b2f5e"]] },
+    { label: "音樂太大聲", params: [["音樂降到", ["目前的一半", "幾乎聽不到，只當襯底"]]],
+      text: "背景音樂太大聲，請降到{0}，人聲要清楚，音樂和畫面都不要換。", note: "畫面不變，只調整音量。" },
+    { label: "AI 選錯畫面", params: [["哪一秒", ["第 8 秒", "第 15 秒"]], ["換成", ["客人轉頭露出側面的那一段", "吹整完成的髮尾特寫"]]],
+      text: "{0}左右的畫面選錯了，請換成「{1}」，長度維持一樣，其他不要動。", note: "只換一段畫面，長度不變。" },
+    { label: "髮色被 AI 改得不真實", params: [["怎麼處理", ["移除所有濾鏡與調色", "只保留輕微的亮度調整"]]],
+      text: "髮色看起來被改過、不真實，請{0}，保持客人真實的髮色，其他不要動。", note: "時間軸不變，只拿掉調色。" },
+    { label: "剪髮畫面太多，看不到我的臉", params: [["剪髮畫面總長不超過", ["整支的一半", "整支的三分之一"]]],
+      text: "剪髮畫面太密集，看不到我說話的臉，請改成剪髮畫面總長不超過{0}，口播內容和字幕不要動。", note: "口播長度不變，減少蓋上去的剪髮畫面。" },
+    { label: "剪髮畫面跟講的內容對不上", params: [["哪一句", ["第 9 秒左右我在說「吹整的時候要順著髮流」", "第 4 秒左右我在說「我先用剪刀把外輪廓修出來」"]], ["換成", ["吹整過程", "剪刀修剪特寫"]]],
+      text: "{0}，但畫面配錯了，請換成「{1}」的剪髮畫面，長度跟這句話一樣，口播聲音不要動，其他不要動。", note: "只換那一句的剪髮畫面。" },
+    { label: "剪髮畫面出現時，聲音斷掉了", params: [["聲音怎麼處理", ["聲音一律使用口播的原音", "剪髮畫面的現場聲全部靜音"]]],
+      text: "剪髮畫面出現的時候口播聲音斷掉了，請讓剪髮畫面只換畫面，{0}，整支口播要連續不中斷，其他不要動。", note: "畫面不變，聲音改成全程口播。" }
+  ]
+};
+
+/* ==================== 課後複習：美髮指令範本 ==================== */
+COURSE.templates = [
+  { title: "染髮前後對比", text: "請使用我提供的三段染髮影片，製作一支 20 秒直式 IG Reels。開頭兩秒先展示染髮完成的亮點，接著放施作過程，最後展示染髮前後差異。加入繁體中文標題「染髮改造前後對比」及最後的「歡迎私訊預約」。不要改變客人的真實髮色。" },
+  { title: "美髮技巧教學", text: "請將我提供的美髮教學素材整理成 30 秒短影音，挑選最重要的三個操作步驟，移除重複和不必要的停頓，依照步驟排列。若有可靠的語音轉文字能力，加入校對過的繁體中文字幕。最後加入「追蹤查看更多美髮技巧」。" },
+  { title: "精品沙龍作品展示", text: "請將這組美髮作品影片製作成 15 秒、高級質感的直式短影音。使用乾淨的剪接、自然柔和的畫面節奏，重點展示髮絲的光澤與造型完成效果。最後加上店名與預約資訊。不要產生不存在的髮型或顏色，也不要使用未授權的音樂。" }
+];
+
+/* ==================== 發布前檢查表（第 7 單元與課後複習共用） ==================== */
+COURSE.publishChecks = [
+  "影片能正常播放", "是直式 9:16", "影片長度符合設定", "沒有黑畫面、閃爍或奇怪的剪接", "字幕是正確的繁體中文",
+  "字幕沒有擋住重要畫面（頭髮、臉）", "店名、電話、價格與優惠都正確", "音樂有合法使用權", "客人同意拍攝並公開使用影像",
+  "AI 沒有不當改變真實的髮型、髮色", "最後有清楚的預約引導", "剪髮畫面出現時，口播聲音沒有中斷", "剪髮畫面和講的內容對得上"
+];
+
+/* ==========================================================================
+   以下是程式邏輯。一般修改內容不需要動到這裡。
+   ========================================================================== */
+(function () {
+"use strict";
+const C = COURSE;
+const $ = (s, r) => (r || document).querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/* ---------- 狀態 ---------- */
+const DEF = { ai: "chatgpt", route: "chat", mode: "student", done: {}, d: {} };
+let S;
+try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem(C.storageKey) || "{}")); } catch (e) { S = Object.assign({}, DEF); }
+S.done = S.done || {}; S.d = S.d || {};
+function save() { try { localStorage.setItem(C.storageKey, JSON.stringify(S)); } catch (e) {} }
+const D = (k, init) => { if (S.d[k] === undefined && init !== undefined) S.d[k] = init; return S.d[k]; };
+const P = () => (S.ai === "chatgpt" ? "gpt" : "claude") + "-" + S.route;
+const AIN = () => S.ai === "chatgpt" ? "ChatGPT" : "Claude";
+
+/* ---------- 變體文字解析 ---------- */
+function pick(o, p) {
+  p = p || P();
+  const ai = p.startsWith("gpt") ? "chatgpt" : "claude", route = p.endsWith("chat") ? "chat" : "agent";
+  for (const k of [p, ai, route, "default"]) if (Object.prototype.hasOwnProperty.call(o, k)) return o[k];
+  return undefined;
+}
+function R(x, p) {
+  if (Array.isArray(x)) return x.map(y => R(y, p));
+  if (x && typeof x === "object") {
+    if (x.__v) return R(pick(x, p), p);
+    const o = {}; for (const k in x) o[k] = R(x[k], p); return o;
+  }
+  return x;
+}
+
+/* ---------- 頁面順序 ---------- */
+function order() {
+  const o = [];
+  C.navGroups.forEach(g => g.pages.forEach(id => { if (id === "teacher" && S.mode !== "teacher") return; o.push(id); }));
+  return o;
+}
+const unitPages = () => Object.keys(C.pages).filter(id => C.pages[id].unit).sort((a, b) => C.pages[a].unit - C.pages[b].unit);
+function pct(id) { const pg = C.pages[id]; if (!pg.reqs) return 0; const n = pg.reqs.filter(r => S.done[r.id]).length; return Math.round(n / pg.reqs.length * 100); }
+function totalPct() { let a = 0, b = 0; unitPages().forEach(id => { const r = C.pages[id].reqs; b += r.length; a += r.filter(x => S.done[x.id]).length; }); return b ? Math.round(a / b * 100) : 0; }
+function setDone(id, val) { if (!id) return; if (val) S.done[id] = true; else delete S.done[id]; }
+let cur = "home";
+
+/* ---------- 複製 ---------- */
+let COPY = [];
+const cp = t => { COPY.push(t); return COPY.length - 1; };
+function copyText(t) {
+  const fallback = () => { const ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch (e) {} ta.remove(); };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).catch(fallback); else fallback();
+}
+function toast(m) { const t = $("#toast"); t.textContent = m; t.classList.add("on"); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove("on"), 1400); }
+
+/* ---------- 指令產生器 ---------- */
+const G = C.generator;
+function genState() { return D("u3.gen", JSON.parse(JSON.stringify(Object.assign({ text: null, view: "edit" }, G.defaults)))); }
+function genLen(g) { return g.len === "custom" ? (Math.max(10, Math.min(90, parseInt(g.custom) || 45))) : g.len; }
+function genSegs(g, p) {
+  p = p || P(); const agent = p.endsWith("agent"); const L = genLen(g); const s = [];
+  const add = (tag, text) => s.push({ tag, text });
+  if (agent) add("plat", G.agentPrefix);
+  const F = g.mode === "aroll" ? G.featureText.aroll : G.featureText.multi;
+  const has = k => g.feats.indexOf(k) >= 0;
+  if (g.mode === "aroll") {
+    add("length", `請用我提供的原片剪一支約 ${L} 秒的直式 MP4。`);
+    add("mode", G.arollCore);
+    if (g.theme && G.themes[g.theme]) add("theme", G.themes[g.theme].aroll);
+    if (g.style && G.styles[g.style]) add("style", G.styles[g.style]);
+    ["cut", "trans", "shop", "logo", "outro", "music"].forEach(k => { if (has(k)) add("feat", F[k]); });
+    if (has("sub")) { add("feat", F.sub); add("plat", F.subEnd); } else add("plat", F.noSubEnd);
+  } else {
+    const th = g.theme && G.themes[g.theme] ? G.themes[g.theme] : G.multiGeneric;
+    add("mode", "請使用我提供的"); add("theme", th.material); add("length", `，製作一支 ${L} 秒的直式 9:16 短影音。`);
+    add("theme", th.order);
+    if (g.style && G.styles[g.style]) add("style", "\n" + G.styles[g.style]);
+    let first = true;
+    ["cut", "sub", "trans", "shop", "logo", "outro", "music"].forEach(k => { if (has(k)) { add("feat", (first ? "\n" : "") + F[k]); first = false; } });
+    add("protect", "\n" + G.protect);
+  }
+  if (agent) add("plat", "\n" + G.agentRules);
+  return s;
+}
+const genBuild = (g, p) => genSegs(g, p).map(x => x.text).join("");
+const genText = () => { const g = genState(); return g.text != null ? g.text : genBuild(g); };
+const defaultPrompt = p => genBuild(JSON.parse(JSON.stringify(G.defaults)), p);
+function quality(text, mode) {
+  const items = G.quality.filter(q => q.modes.indexOf(mode) >= 0);
+  return items.map(q => ({ label: q.label, tip: q.tip, ok: new RegExp(q.test).test(text) }));
+}
+let genFlash = null;
+
+/* ---------- 計時器（模擬播放） ---------- */
+const T = {};
+function stopAll() { Object.keys(T).forEach(k => { clearInterval(T[k].timer); T[k].playing = false; }); }
+
+/* ---------- 區塊渲染 ---------- */
+let BLK = {}, detN = 0; const DET = new Set();
+function wrap(b, inner) { return b.id ? `<div data-block="${esc(b.id)}">${inner}</div>` : inner; }
+function blocks(arr) { return (arr || []).map(block).join(""); }
+function block(b) {
+  if (!b) return "";
+  if (b.show && b.show !== S.route) return "";
+  if (b.id) BLK[b.id] = b;
+  const f = RENDER[b.t];
+  if (!f) return `<p class="small">（未知區塊：${esc(b.t)}）</p>`;
+  return wrap(b, f(b));
+}
+function boxH(title, right) { return `<div class="box-h"><span>${title}</span><span class="sp"></span>${right || ""}</div>`; }
+function resetBtn(id) { return `<button class="btn sm" data-act="resetBlock" data-id="${esc(id)}">重新練習</button>`; }
+function details(summary, inner) { const k = cur + ":" + (detN++); return `<details class="det" data-det="${k}"${DET.has(k) ? " open" : ""}><summary>${summary}</summary><div class="dbody">${inner}</div></details>`; }
+function copyBtn(text, label, cls, req) { return `<button class="btn ${cls || "teal"}" data-act="copy" data-ci="${cp(text)}"${req ? ` data-req="${req}"` : ""} data-label="${esc(label || "複製")}">${esc(label || "複製")}</button>`; }
+function fill(s) {
+  if (typeof s !== "string") return s;
+  return s.replace(/\{AI\}/g, AIN()).replace(/\{PLAT\}/g, C.platformNames[P()]).replace(/\{LEN\}/g, genLen(genState())).replace(/\{PASTE\}/g, R(C.shared.pasteWhere));
+}
+function tlBar(segs, total, cursorT) {
+  let h = `<div class="tl">`;
+  segs.forEach(s => { h += `<div style="width:${s[1] / total * 100}%;background:${s[2]}" title="${esc(s[0])} ${s[1]} 秒">${esc(s[0])}${s[3] ? "" : ""}</div>`; });
+  if (cursorT != null) h += `<div class="cursor" style="left:${Math.min(100, cursorT / total * 100)}%"></div>`;
+  return h + `</div>`;
+}
+
+const RENDER = {
+  p: b => `<p>${fill(b.html)}</p>`,
+  small: b => `<p class="small">${fill(b.html)}</p>`,
+  h3: b => `<h3 style="font-size:16px;margin:16px 0 6px">${b.text}</h3>`,
+  tagPink: b => `<div class="tag-pink">${esc(b.text)}</div>`,
+  banner: b => `<div class="banner">${b.html}</div>`,
+  callout: b => `<div class="callout ${b.tone || ""}">${b.title ? `<div class="ct">${b.title}</div>` : ""}<div>${fill(b.html)}</div>${b.details ? details(b.details.summary, `<p>${b.details.html}</p>`) : ""}</div>`,
+  list: b => { const tag = b.ordered ? "ol" : "ul"; return `<${tag} class="list">${(b.items || []).map(i => `<li>${i}</li>`).join("")}</${tag}>`; },
+  tree: b => `<div class="pre-tree">${esc(b.text)}</div>`,
+  table: b => {
+    const lab = { official: "官方說明", public: "公開實例", paid: "需付費", todo: "待補紀錄" };
+    let h = `<div class="tblwrap"><table class="tbl"><thead><tr>${b.head.map(x => `<th>${x}</th>`).join("")}</tr></thead><tbody>`;
+    (b.rows || []).forEach(r => { h += "<tr>" + r.map((c, i) => `<td>${b.badgeCol === i && lab[c] ? `<span class="badge ${c}">${lab[c]}</span>` : c}</td>`).join("") + "</tr>"; });
+    return h + `</tbody></table></div>${b.note ? `<p class="small">${b.note}</p>` : ""}`;
+  },
+  grid2: b => `<div class="grid2">${b.cards.map(c => `<div class="card"${c.border ? ` style="border:2px solid ${c.border}"` : ""}><h3>${c.title}</h3>${c.html ? `<div style="font-size:14px">${c.html}</div>` : ""}${c.list ? `<ul class="list">${c.list.map(i => `<li>${i}</li>`).join("")}</ul>` : ""}</div>`).join("")}</div>`,
+  sources: () => details("資料來源（官方限制與公開實例）", `<ul class="list">${C.shared.sources.map(s => `<li><a href="${s[1]}" target="_blank" rel="noopener">${esc(s[0])}</a></li>`).join("")}</ul><p class="small">查核日期：${C.shared.checkedDate}。方案與功能會變動，以官方說明為準。</p>`),
+  links: b => `<ul class="list">${b.items.map(s => `<li><a href="${s[1]}" target="_blank" rel="noopener">${esc(s[0])}</a></li>`).join("")}</ul>`,
+  code: b => `<div class="box">${boxH(esc(b.title), copyBtn(b.text, "複製", "teal sm"))}<div class="box-b"><pre class="codebox">${esc(b.text)}</pre></div></div>`,
+  quote: b => { const t = C.shared[b.textFrom] || b.text; return `<div class="callout navy"><div>${esc(t)}</div><div class="mt">${copyBtn(t, b.copyLabel || "複製", "teal sm")}</div></div>`; },
+  action: b => b.href ? `<p class="mt"><a class="btn ${b.cls || ""}" href="${b.href}">${esc(b.label)}</a></p>` : `<p class="mt"><button class="btn ${b.cls || ""}" data-act="${b.action}">${esc(b.label)}</button></p>`,
+
+  prompt: b => {
+    const text = b.source === "gen" ? genText() : defaultPrompt();
+    const title = b.source === "default" ? b.title.replace("{LEN}", "30") : b.title;
+    return `<div class="prompt-card box">${boxH(esc(fill(title)))}<div class="box-b"><pre class="codebox">${esc(text)}</pre>
+      <div class="row mt">${copyBtn(text, b.copyLabel, "teal")}${b.backToGen ? `<a class="btn" href="#u3">回去修改</a>` : ""}</div>
+      ${b.after ? `<div class="after">${fill(b.after)}</div>` : `<div class="after">${fill("{PASTE}")}</div>`}</div></div>`;
+  },
+
+  toolcards: b => {
+    const st = D(b.id, { open: [], seen: [] });
+    return `<div class="box">${b.items.map((it, i) => {
+      const open = st.open.indexOf(i) >= 0;
+      return `<div class="toolcard"><div class="tc-ill"><i style="top:12px;width:44px;background:#cbd5e1"></i><i style="top:24px;width:30px;background:${it.color}"></i><i style="top:36px;width:50px;background:#e2e8f0"></i><b style="background:${it.color}"></b></div>
+      <div class="tc-body"><div class="tc-tags"><span class="t ${it.tagType}">${esc(it.tag)}</span>${esc(it.org)}</div>
+      <div class="tc-title"><u>${esc(it.name)}</u>｜${esc(it.title)}</div><div style="font-size:14px">${it.desc}</div>
+      ${open ? `<div class="tc-more"><h4>能做什麼</h4><ul class="list">${it.can.map(c => `<li>${c}</li>`).join("")}</ul><h4>美髮案例</h4><div>${it.example}</div></div>` : ""}
+      <button class="btn sm mt" data-act="toolcard" data-id="${b.id}" data-i="${i}">${open ? "收起" : "看美髮案例"}</button></div></div>`;
+    }).join("")}</div>`;
+  },
+
+  quiz: b => {
+    const st = D(b.id, {}); const n = b.qs.length; const ans = Object.keys(st).length;
+    const right = b.qs.filter((q, i) => st[i] === q.a).length;
+    return `<div class="box">${boxH(esc(b.title), `<span class="stat">已作答 ${ans}／${n}，答對 ${right}</span>${resetBtn(b.id)}`)}<div class="box-b">${b.qs.map((q, i) => {
+      const a = st[i];
+      return `<div class="q"><div class="q-t">${q.q}</div><div class="opts">${q.opts.map((o, j) => {
+        let c = ""; if (a !== undefined) { if (j === q.a) c = "right"; else if (j === a) c = "wrong"; }
+        return `<button class="opt ${c}" data-act="quiz" data-id="${b.id}" data-q="${i}" data-o="${j}">${o}</button>`;
+      }).join("")}</div>${a !== undefined ? `<div class="q-ex">${a === q.a ? "✅ 答對了！" : "❌ 再想想。"} <b>正確答案：${q.opts[q.a]}</b>。${q.ex || ""}</div>` : ""}</div>`;
+    }).join("")}</div></div>`;
+  },
+
+  match: b => {
+    const st = D(b.id, {}); const ans = Object.keys(st).length;
+    const lvTxt = { 3: ["●●●", "最適合", "lv3"], 2: ["●●○", "也可以", "lv2"], 1: ["●○○", b.compact ? "不太適合" : "不太需要", "lv1"] };
+    const ratings = q => q.r ? q.r : b.options.map((o, k) => { if (q.best[0] === k) return [3, q.best[1]]; const ok = (q.ok || []).find(x => x[0] === k); return ok ? [2, ok[1]] : [1, b.defaultBad]; });
+    return `<div class="box">${boxH(esc(b.title), `<span class="stat">已作答 ${ans}／${b.qs.length}</span>${resetBtn(b.id)}`)}<div class="box-b">${b.qs.map((q, i) => {
+      const a = st[i]; const rs = ratings(q);
+      let h = `<div class="q"><div class="q-t">${q.q}</div><div class="opts">${b.options.map((o, j) => `<button class="opt ${a === j ? "picked" : ""}" data-act="match" data-id="${b.id}" data-q="${i}" data-o="${j}">${esc(o.label)}${o.sub ? `<span class="s">${esc(o.sub)}</span>` : ""}</button>`).join("")}</div>`;
+      if (a !== undefined) {
+        const idx = b.compact ? rs.map((r, k) => k).sort((x, y) => rs[y][0] - rs[x][0]) : rs.map((r, k) => k);
+        h += `<div class="rate">` + idx.map(k => { const r = rs[k], L = lvTxt[r[0]], hl = k === a ? " row-hl" : "";
+          return `<div class="rn${hl}">${esc(b.options[k].short || b.options[k].label)}${k === a ? "<br>（你選的）" : ""}</div><div class="${L[2]}${hl}">${L[0]} ${L[1]}</div><div class="${hl}">${r[1]}</div>`; }).join("") + `</div>`;
+      }
+      return h + `</div>`;
+    }).join("")}</div></div>`;
+  },
+
+  tabs: b => {
+    const st = D(b.id, { cur: 0, seen: [0] });
+    const head = `<div class="chips" style="margin:${b.plain ? "6px 0 14px" : "0"}">${b.tabs.map((t, i) => `<button class="chip ${st.cur === i ? "on" : ""}" data-act="tab" data-id="${b.id}" data-i="${i}">${esc(t.label)}</button>`).join("")}</div>`;
+    const body = blocks(b.tabs[st.cur].blocks);
+    if (b.plain) return head + body;
+    return `<div class="box">${b.title ? boxH(esc(b.title)) : ""}<div class="box-b">${head}<div class="mt">${body}</div></div></div>`;
+  },
+
+  toolmap: b => {
+    const st = D(b.id, { cur: 0 }); const t = b.tabs[st.cur];
+    return `<div class="box">${boxH(esc(b.title))}<div class="box-b"><div class="chips">${b.tabs.map((x, i) => `<button class="chip ${st.cur === i ? "on" : ""}" data-act="tab" data-id="${b.id}" data-i="${i}">${esc(x.label)}</button>`).join("")}</div>
+      <div class="row mt" style="align-items:flex-start;gap:14px;flex-wrap:nowrap"><div style="font-size:30px;line-height:1">${t.icon}</div><div style="flex:1">
+      <span class="pill-navy" style="background:var(--rose)">情境 ${st.cur + 1}</span><h3 style="font-size:16px;margin:4px 0">${esc(t.label.replace(/^\d+\.\s*/, ""))}</h3>
+      <p><b>用：</b>${t.use}</p><p><b>例如：</b>${t.eg}</p><p><b>任務跑在哪裡：</b>${t.where}</p><p class="small">${t.unit}</p></div></div>${blocks(t.extra)}</div></div>`;
+  },
+
+  flow: b => `<div class="box">${boxH(esc(b.title))}<div class="flow">${b.steps.map((s, i) => `${i ? '<span class="ar">→</span>' : ""}<div class="st"><b>${esc(s[0])}</b><span>${esc(s[1])}</span></div>`).join("")}</div></div>`,
+
+  layers: () => `<div class="box">${boxH("三層疊起來看")}<div class="box-b tracks">
+    <div class="track"><span class="tn">上層 畫面</span><div class="tr">
+      <div style="left:0;width:22%;background:#cbd5e1;color:#475569">（沒有剪髮畫面，看得到你）</div><div style="left:22%;width:20%;background:#b5476b">剪髮畫面 剪刀特寫</div>
+      <div style="left:42%;width:16%;background:#e2e8f0;color:#475569">（露臉）</div><div style="left:58%;width:22%;background:#c27c0e">剪髮畫面 吹整</div><div style="left:80%;width:20%;background:#e2e8f0;color:#475569">（露臉）</div></div></div>
+    <div class="track"><span class="tn">下層 畫面</span><div class="tr"><div style="left:0;width:100%;background:#1b2f5e">口播：你對著鏡頭講話（一直都在）</div></div></div>
+    <div class="track"><span class="tn">聲音</span><div class="tr"><div class="wave" style="left:0;width:100%">口播聲音：從頭到尾不中斷</div></div></div>
+    <p class="small" style="margin-top:10px">觀眾看到的是「上層有剪髮畫面就看剪髮畫面，沒有就看到你」，但聲音一直是你的口播。</p></div></div>`,
+
+  stratSim: b => {
+    const st = D(b.id, { clip: 0, strat: 0, tried: [0] }); const tm = T[b.id] || (T[b.id] = { t: 0, playing: false });
+    const colors = { end: "#1b2f5e" }; b.clips.forEach(c => colors[c.key] = c.color);
+    const sg = b.strategies[st.strat]; const segs = sg.segs.map(s => [s[0], s[1], colors[s[2]], s[3]]);
+    let acc = 0, curSeg = segs[0]; for (const s of segs) { if (tm.t >= acc && tm.t < acc + s[1]) { curSeg = s; break; } acc += s[1]; } if (tm.t >= b.total) curSeg = segs[segs.length - 1];
+    const clipBar = c => { const [a, z] = c.cut; return `<div class="bar"><div class="stripe" style="width:${a}%"></div><div style="width:${z - a}%;background:${c.color}"></div><div class="stripe" style="width:${100 - z}%"></div></div>`; };
+    const clipBar2 = c => c.cut[0] === 0 ? `<div class="bar"><div class="stripe" style="width:${c.cut[1]}%"></div><div style="width:${100 - c.cut[1]}%;background:${c.color}"></div></div>` : clipBar(c);
+    return `<div class="sim"><div>
+      <h3 style="font-size:15px;margin:6px 0">原始素材（點一下看 AI 會怎麼處理）</h3>
+      ${b.clips.map((c, i) => `<div class="clip ${st.clip === i ? "on" : ""}" data-act="clip" data-id="${b.id}" data-i="${i}"><b>${c.key}｜${esc(c.name)}</b> <span class="small">${c.sec} 秒</span>${clipBar2(c)}${st.clip === i ? `<div class="small">${esc(c.note)}（斜線＝會被刪掉的部分）</div>` : ""}</div>`).join("")}
+      <h3 style="font-size:15px;margin:12px 0 6px">選一種剪輯策略</h3>
+      <div class="chips">${b.strategies.map((s, i) => `<button class="chip rose ${st.strat === i ? "on" : ""}" data-act="strat" data-id="${b.id}" data-i="${i}">${esc(s.name)}</button>`).join("")}</div>
+      <h3 style="font-size:15px;margin:12px 0 2px">剪好的 ${b.total} 秒成品（時間軸）</h3>${tlBar(segs, b.total, tm.t)}<p class="small">${esc(sg.desc)}</p>
+    </div><div><div class="phone" style="background:${curSeg[2]}"><span class="lab">9:16 模擬</span><div class="what">${esc(curSeg[0])}</div><div class="cap">${esc(curSeg[3])}</div><div class="tc">${tm.t.toFixed(1)} / ${b.total.toFixed(1)} 秒</div></div>
+      <div class="playrow"><button class="btn navy sm" data-act="play" data-id="${b.id}">${tm.playing ? "暫停" : "播放模擬"}</button>（以 2 倍速播放）</div></div></div>`;
+  },
+
+  arollSim: b => {
+    const st = D(b.id, { ver: 2, seen: [2] }); const tm = T[b.id] || (T[b.id] = { t: 0, playing: false });
+    const m = arollModel(b, st.ver); const t = tm.t;
+    const pc = x => x / m.total * 100;
+    const curLine = m.speech.find(s => t >= s[0] && t < s[0] + s[1]); const inPause = m.pauses.find(s => t >= s[0] && t < s[0] + s[1]);
+    const br = st.ver === 2 ? b.broll.find(x => t >= x[0] && t < x[0] + x[1]) : null;
+    const cursor = `<div class="cursor" style="left:${Math.min(100, pc(t))}%"></div>`;
+    let brRow = st.ver === 2 ? b.broll.map(x => `<div style="left:${pc(x[0])}%;width:${pc(x[1])}%;background:${x[3]}">${esc(x[2])}</div>`).join("") : `<div style="left:0;width:100%;background:transparent;color:#94a3b8">（沒有剪髮畫面）</div>`;
+    let face = "";
+    if (st.ver === 2) { let last = 0; b.broll.forEach(x => { if (x[0] > last) face += `<div style="left:${pc(last)}%;width:${pc(x[0] - last)}%;background:#1b2f5e">露臉</div>`; face += `<div style="left:${pc(x[0])}%;width:${pc(x[1])}%;background:#cbd5e1;color:#334155">被蓋住</div>`; last = x[0] + x[1]; }); face += `<div style="left:${pc(last)}%;width:${pc(m.total - last)}%;background:#1b2f5e">露臉</div>`; }
+    else { face = `<div style="left:0;width:100%;background:#1b2f5e">露臉（同一個畫面）</div>`; }
+    const subs = m.speech.map(s => `<div style="left:${pc(s[0])}%;width:${pc(s[1])}%;background:#475569">${esc(s[2])}</div>`).join("") + m.pauses.map(s => `<div style="left:${pc(s[0])}%;width:${pc(s[1])}%;background:#e2e8f0;color:#64748b">${esc(s[2])}</div>`).join("");
+    const aud = m.speech.map(s => `<div class="wave" style="left:${pc(s[0])}%;width:${pc(s[1])}%"></div>`).join("") + m.pauses.map(s => `<div style="left:${pc(s[0])}%;width:${pc(s[1])}%;background:#94a3b8">${esc(s[2])}</div>`).join("");
+    const bg = br ? br[3] : "#1e3a6e";
+    return `<div class="chips" style="margin:8px 0 12px">${b.versions.map((v, i) => `<button class="chip rose ${st.ver === i ? "on" : ""}" data-act="ver" data-id="${b.id}" data-i="${i}">${esc(v.name)}</button>`).join("")}</div>
+    <div class="sim"><div class="tracks">
+      <div class="track"><span class="tn">剪髮畫面</span><div class="tr">${brRow}${cursor}</div></div>
+      <div class="track"><span class="tn">畫面</span><div class="tr">${face}${cursor}</div></div>
+      <div class="track"><span class="tn">字幕</span><div class="tr">${subs}${cursor}</div></div>
+      <div class="track"><span class="tn">口播聲音</span><div class="tr">${aud}${cursor}</div></div>
+      <p style="font-size:13px;margin-top:10px">${b.versions[st.ver].desc}</p>
+    </div><div><div class="phone" style="background:${bg}"><span class="lab">9:16 模擬</span><div class="aud">${inPause ? "口播聲音：（" + inPause[2] + "）" : "口播聲音：播放中"}</div>
+      <div class="what">${br ? "剪髮畫面：" + esc(br[2]) : inPause ? "（" + esc(inPause[2]) + "）" : "口播：美髮師對鏡頭講話"}</div><div class="cap">${curLine ? esc(curLine[3]) : ""}</div><div class="tc">${t.toFixed(1)} / ${m.total.toFixed(1)} 秒</div></div>
+      <div class="playrow"><button class="btn navy sm" data-act="play" data-id="${b.id}">${tm.playing ? "暫停" : "播放模擬"}</button>（${b.speed} 倍速）</div></div></div>`;
+  },
+
+  gen: () => {
+    const g = genState(); const segs = genSegs(g); const text = g.text != null ? g.text : segs.map(s => s.text).join("");
+    const chip = (grp, val, label, on) => `<button class="chip ${on ? "on" : ""}" data-act="gen" data-k="${grp}" data-v="${esc(val)}">${on ? "✓ " : ""}${esc(label)}</button>`;
+    const grp = (k, label, inner) => `<div class="gen-g"><div class="gen-l"><span class="k">${k}</span>${label}</div><div class="chips">${inner}</div></div>`;
+    let L = "";
+    L += grp("A", "使用哪個 AI", chip("ai", "chatgpt", "ChatGPT", S.ai === "chatgpt") + chip("ai", "claude", "Claude", S.ai === "claude"));
+    L += grp("B", "操作路線", chip("route", "chat", "直接對話", S.route === "chat") + chip("route", "agent", "Codex／Claude Code", S.route === "agent"));
+    L += grp("★", "剪輯模式", G.modes.map(m => chip("mode", m.key, m.label, g.mode === m.key)).join(""));
+    L += grp("C", "影片主題", Object.keys(G.themes).map(t => chip("theme", t, t, g.theme === t)).join(""));
+    L += grp("D", "影片風格", Object.keys(G.styles).map(t => chip("style", t, t, g.style === t)).join(""));
+    L += grp("E", "影片長度", G.lengths.map(n => chip("len", n, n + " 秒", g.len === n)).join("") + chip("len", "custom", "自訂", g.len === "custom") +
+      (g.len === "custom" ? ` <input class="num" type="number" min="10" max="90" value="${esc(g.custom)}" data-inp="genCustom"> 秒` : ""));
+    L += `<p class="small" style="margin-top:-8px">自訂可填 10 至 90 秒；有片尾時，片尾固定 3 秒，其餘是口播與剪髮畫面。</p>`;
+    L += grp("F", "其他功能（可複選）", G.features.map(f => chip("feat", f.key, f.label, g.feats.indexOf(f.key) >= 0)).join(""));
+    const view = g.view === "src"
+      ? `<div class="legend">${G.legend.map(l => `<span class="src src-${l[0]}">${l[1]}</span>`).join("")}</div><div class="view">${segs.map(s => `<span class="src src-${s.tag}${genFlash === s.tag ? " flash" : ""}">${esc(s.text)}</span>`).join("")}</div>${g.text != null ? `<p class="small">你修改過文字；這裡顯示的是依選項產生的原始版本。</p>` : ""}`
+      : `<textarea data-inp="genText" aria-label="自動剪輯要求">${esc(text)}</textarea>`;
+    return `<div class="gen"><div>${L}</div><div class="gen-r">
+      <div class="gen-head"><span>目前版本</span><b>${esc(C.platformNames[P()])}</b></div>
+      <div class="chips" style="margin:8px 0"><button class="chip ${g.view !== "src" ? "on" : ""}" data-act="genView" data-v="edit">指令（可以直接修改）</button><button class="chip ${g.view === "src" ? "on" : ""}" data-act="genView" data-v="src">看每個選項影響哪裡</button></div>
+      ${view}
+      <div class="row mt"><button class="btn teal" data-act="copyGen" data-label="複製自動剪輯要求">複製自動剪輯要求</button><button class="btn" data-act="genRegen">依選項重新產生</button><button class="btn" data-act="genReset">全部重設</button></div>
+      <p class="after">${fill("{PASTE}")}</p>
+      <div class="qual" id="genQual">${qualHTML(text, g.mode)}</div></div></div>`;
+  },
+
+  routeCards: b => {
+    const card = (k, r) => { r = R(r); return `<div class="card ${b.selectable ? "selcard" : ""} ${b.selectable && S.route === k ? "on" : ""}" ${b.selectable ? `data-act="route" data-v="${k}"` : ""}>
+      <h3>${esc(r.title)}</h3><div class="pros">優點</div><ul class="list">${r.pros.map(x => `<li>${x}</li>`).join("")}</ul><div class="cons">限制</div><ul class="list">${r.cons.map(x => `<li>${x}</li>`).join("")}</ul></div>`; };
+    return `<div class="grid2">${card("chat", C.shared.routeA)}${card("agent", C.shared.routeB)}</div>`;
+  },
+  aiPick: () => `<div class="row" style="margin:6px 0"><b style="color:var(--navy)">用哪個 AI：</b><div class="seg"><button class="${S.ai === "chatgpt" ? "on" : ""}" data-act="ai" data-v="chatgpt" data-req="u4.pick">ChatGPT</button><button class="${S.ai === "claude" ? "on" : ""}" data-act="ai" data-v="claude" data-req="u4.pick">Claude</button></div></div>`,
+  genModeHint: () => genState().mode === "aroll" ? "" : `<div class="callout amber">你的指令目前是「多段素材串接」模式——要練習這個案例，請到<a href="#u3">指令產生器</a>把剪輯模式改成「口播＋剪髮畫面」。</div>`,
+
+  checklist: b => {
+    const items = b.itemsFrom ? C.shared[b.itemsFrom] : b.items; const st = D(b.id, {});
+    return items.map((it, i) => { const t = Array.isArray(it) ? it : [it]; const on = !!st[i];
+      return `<div class="check ${on ? "on" : ""}" data-act="check" data-id="${b.id}" data-i="${i}" role="checkbox" aria-checked="${on}"><span class="bx">${on ? "✓" : ""}</span><div><div class="ct">${b.numbered ? "①②③④⑤⑥⑦⑧⑨⑩"[i] + " " : ""}${t[0]}</div>${t[1] ? `<div class="cd">${t[1]}</div>` : ""}</div></div>`; }).join("");
+  },
+  steps: b => {
+    const key = b.id + "." + P(); const st = D(key, {}); const n = b.items.filter((x, i) => st[i]).length;
+    return `<p class="small">${esc(C.platformNames[P()])}：已完成 ${n}／${b.items.length} 步</p>` + b.items.map((it, i) => { const on = !!st[i];
+      return `<div class="check ${on ? "on" : ""}" data-act="step" data-id="${b.id}" data-i="${i}" role="checkbox" aria-checked="${on}"><span class="bx">${on ? "✓" : ""}</span><div><div class="ct">${it[0]}</div><div class="cd">${it[1]}</div></div></div>`; }).join("");
+  },
+  publishCheck: b => {
+    const st = D("u6.publish", {}); const items = C.publishChecks; const n = items.filter((x, i) => st[i]).length; const left = items.filter((x, i) => !st[i]);
+    return `<div class="box">${boxH("發布前檢查表", `<button class="btn sm" data-act="pubClear" data-id="${b.id}">全部取消</button>`)}<div class="box-b">
+      ${items.map((it, i) => `<div class="check ${st[i] ? "on" : ""}" data-act="pub" data-id="${b.id}" data-i="${i}" role="checkbox" aria-checked="${!!st[i]}"><span class="bx">${st[i] ? "✓" : ""}</span><div class="ct">${it}</div></div>`).join("")}
+      ${left.length ? `<div class="callout amber"><b>已完成 ${n}／${items.length} 項，還有 ${left.length} 項需要確認</b><div class="small">尚未確認：${left.map(x => "「" + x + "」").join("、")}</div></div>` : `<div class="callout green"><b>已完成 ${n}／${items.length} 項。</b>全部確認了，可以發布！</div>`}</div></div>`;
+  },
+
+  trouble: b => {
+    const st = D(b.id, { sel: null }); const p = P();
+    let h = `<div class="box">${boxH("常見卡關處理")}<div class="box-b"><div class="chips">${C.troubles.map((t, i) => `<button class="chip ${st.sel === i ? "on" : ""}" data-act="trouble" data-id="${b.id}" data-i="${i}">${esc(t.q)}</button>`).join("")}</div>`;
+    if (st.sel == null) h += `<p class="small mt">選一個你遇到的情況。</p>`;
+    else { const t = C.troubles[st.sel];
+      h += `<div class="card mt" style="border:2px solid var(--teal)"><b style="color:var(--navy)">${esc(t.q)}</b> <span class="small">（目前：${esc(C.platformNames[p])}）</span><p>${t.a[p]}</p>
+        ${details("看其他平台／路線的做法", Object.keys(C.platformNames).filter(k => k !== p).map(k => `<p><b>${esc(C.platformNames[k])}：</b>${t.a[k]}</p>`).join(""))}</div>`; }
+    return h + `</div></div>`;
+  },
+  troubleAccordion: () => C.troubles.map(t => details(esc(t.q), `<p><b>${esc(C.platformNames[P()])}：</b>${t.a[P()]}</p>${Object.keys(C.platformNames).filter(k => k !== P()).map(k => `<p class="small"><b>${esc(C.platformNames[k])}：</b>${t.a[k]}</p>`).join("")}`)).join(""),
+
+  sentence: b => {
+    const st = D(b.id, {});
+    return `<div class="sent">${b.parts.map((p, i) => `${i ? '<span class="plus">＋</span>' : ""}<div class="sblk" data-act="sent" data-id="${b.id}" data-i="${i}" style="${st[i] ? `border-color:${p[2]};background:${p[2]}10` : ""}">${esc(p[0])}<small style="color:${p[2]}">${st[i] ? esc(p[1]) : "？"}</small></div>`).join("")}</div>
+      <p class="small">${Object.keys(st).length >= b.parts.length ? "✅ 四塊都認識了：哪一段＋有什麼問題＋希望改成什麼＋其他不要動。" : `已認識 ${Object.keys(st).length}／${b.parts.length} 塊`}</p>`;
+  },
+
+  editPractice: b => {
+    const E = C.editPractice; const st = D(b.id, { cur: null, sel: {}, made: [] });
+    let h = `<div class="box">${boxH("修改練習", `<span class="stat">已產生 ${st.made.length} 個修正指令</span>${resetBtn(b.id)}`)}<div class="box-b"><div class="tag-pink">教學模擬：時間軸色塊示意修改前後，不是真的影片</div>
+      <h4 style="margin:8px 0">1. 這支示範影片哪裡不好？</h4><div class="prob">${E.problems.map((p, i) => `<button class="${st.cur === i ? "on" : ""} ${st.made.indexOf(i) >= 0 ? "done" : ""}" data-act="prob" data-id="${b.id}" data-i="${i}">${esc(p.label)}${st.cur === i || st.made.indexOf(i) >= 0 ? " ✓" : ""}</button>`).join("")}</div>`;
+    if (st.cur != null) {
+      const p = E.problems[st.cur]; const sel = st.sel[st.cur] || p.params.map(() => 0); const vals = p.params.map((pr, k) => pr[1][sel[k]]);
+      const text = p.text.replace(/\{(\d)\}/g, (m, k) => vals[+k]);
+      const before = p.before || E.before; const after = p.after ? p.after(vals) : before;
+      const total = Math.max(before.reduce((a, s) => a + s[1], 0), after.reduce((a, s) => a + s[1], 0));
+      const tl = segs => `<div class="tl" style="width:${segs.reduce((a, s) => a + s[1], 0) / total * 100}%">${segs.map(s => `<div style="width:${s[1] / segs.reduce((a, x) => a + x[1], 0) * 100}%;background:${s[2]}">${esc(s[0])} ${s[1]}s</div>`).join("")}</div>`;
+      h += `<div class="inner"><h4>2. 選擇你要的修改方式</h4>${p.params.map((pr, k) => `<div class="small" style="margin-top:6px">${esc(pr[0])}</div><div class="chips">${pr[1].map((o, j) => `<button class="chip ${sel[k] === j ? "on" : ""}" data-act="param" data-id="${b.id}" data-k="${k}" data-j="${j}">${sel[k] === j ? "✓ " : ""}${esc(o)}</button>`).join("")}</div>`).join("")}</div>
+        <div class="inner"><h4>3. 產生的修正指令</h4><pre class="codebox">${esc(text)}</pre><div class="row mt">${copyBtn(text, "複製", "teal sm")}</div>
+        <div class="tlrow mt"><span class="small">修改前</span>${tl(before)}</div><div class="tlrow"><span class="small">修改後</span>${tl(after)}</div>${p.note ? `<p class="small">${esc(p.note)}</p>` : ""}</div>`;
+    } else h += `<p class="small mt">先選一個問題。</p>`;
+    return h + `</div></div>`;
+  },
+
+  homework: b => {
+    const st = D(b.id, { sel: null });
+    return `<div class="chips">${b.items.map((it, i) => `<button class="chip ${st.sel === i ? "on" : ""}" data-act="hw" data-id="${b.id}" data-i="${i}">${st.sel === i ? "✓ " : ""}${esc(it.label)}</button>`).join("")}</div>${st.sel != null ? `<div class="callout">${b.items[st.sel].html}</div>` : ""}`;
+  },
+  progressCards: () => `<div class="grid4">${unitPages().map(id => { const pg = C.pages[id], v = pct(id); return `<a class="pcard" href="#${id}"><b>${pg.unit}. ${esc(pg.nav)}</b><div class="pbar"><i style="width:${v}%"></i></div><div class="m">完成 ${v}%</div></a>`; }).join("")}</div>`,
+  testList: b => b.groups.map(g => `<h3 style="font-size:15px;margin:12px 0 4px">${esc(g[0])}</h3><ul class="list">${g[1].map(x => `<li>${x} <span class="badge todo">待實測</span></li>`).join("")}</ul>`).join(""),
+
+  templates: b => {
+    const st = D("review.tpl", { p: null }); const p = st.p || P(); const agent = p.endsWith("agent");
+    const wrapT = t => agent ? COURSE.generator.agentPrefix + t + "請把成品存成這個資料夾裡的「剪髮成品.mp4」，不要覆蓋原始影片。" : t;
+    const list = [{ title: `口播＋剪髮畫面（核心）（${C.platformNames[p]}版）`, text: defaultPrompt(p) }].concat(C.templates.map(x => ({ title: x.title, text: wrapT(x.text) })));
+    return `<div data-block="review.tpl"><div class="chips" style="margin-bottom:10px">${Object.keys(C.platformNames).map(k => `<button class="chip ${k === p ? "on" : ""}" data-act="tpl" data-v="${k}">${esc(C.platformNames[k])}</button>`).join("")}</div>
+      ${list.map((x, i) => `<div class="box">${boxH(`${i + 1}. ${esc(x.title)}`, copyBtn(x.text, "複製", "teal sm"))}<div class="box-b"><pre class="codebox">${esc(x.text)}</pre></div></div>`).join("")}</div>`;
+  },
+  fixList: () => C.editPractice.problems.map(p => { const t = p.text.replace(/\{(\d)\}/g, (m, k) => p.params[+k][1][0]); return `<div class="box">${boxH(esc(p.label), copyBtn(t, "複製", "teal sm"))}<div class="box-b" style="font-size:14px">${esc(t)}</div></div>`; }).join(""),
+  allSteps: () => { const sb = findBlock("u4", "steps"); return Object.keys(C.platformNames).map(k => { const items = R(sb.items, k); return `<div class="box">${boxH(esc(C.platformNames[k]))}<div class="box-b"><ol class="list">${items.map(it => `<li><b>${it[0].replace(/^步驟 \d：/, "")}</b> — ${it[1]}</li>`).join("")}</ol></div></div>`; }).join(""); }
+};
+
+function qualHTML(text, mode) {
+  const q = quality(text, mode); const n = q.filter(x => x.ok).length;
+  return `<b style="color:var(--navy)">指令品質回饋</b>　${n}／${q.length} 項<div class="qbar"><i style="width:${n / q.length * 100}%"></i></div>` +
+    q.map(x => `<div class="${x.ok ? "ok" : "no"}">${x.ok ? "✓" : "○"} ${esc(x.label)}</div>${x.ok ? "" : `<div class="tip">${esc(x.label)}：${esc(x.tip)}</div>`}`).join("") +
+    (n === q.length ? `<div class="ok" style="margin-top:6px;font-weight:700">這段指令很完整，可以拿去用了。</div>` : "");
+}
+function findBlock(pid, type) {
+  let found = null; const walk = arr => (arr || []).forEach(b => { if (found) return; if (b.t === type) found = b; if (b.tabs) b.tabs.forEach(t => walk(t.blocks)); });
+  const pg = C.pages[pid]; walk(pg.blocks); walk(pg.intro); (pg.sections || []).forEach(s => walk(s.blocks)); return found;
+}
+function arollModel(b, ver) {
+  const speech = [], pauses = [];
+  if (ver === 0) { let t = 0; b.lines.forEach((l, i) => { const d = b.times[i][1] - b.times[i][0]; speech.push([t, d, l.slice(0, 7) + "…", l]); t += d; b.pauses.forEach(p => { if (p[0] === i) { pauses.push([t, p[1], p[2]]); t += p[1]; } }); }); return { speech, pauses, total: t }; }
+  b.lines.forEach((l, i) => speech.push([b.times[i][0], b.times[i][1] - b.times[i][0], l.slice(0, 7) + "…", l]));
+  return { speech, pauses, total: b.times[b.times.length - 1][1] };
+}
+
+/* ---------- 版面：側欄、工具列、內容 ---------- */
+function renderSidebar() {
+  const tp = totalPct();
+  let h = `<div class="sb-title">${esc(C.title)}</div><div class="sb-sub">${esc(C.subtitle)}</div><div class="sb-prog"><i style="width:${tp}%"></i></div><div class="sb-prog-t">課程進度 ${tp}%</div>`;
+  C.navGroups.forEach(g => {
+    const pages = g.pages.filter(id => id !== "teacher" || S.mode === "teacher"); if (!pages.length) return;
+    if (g.label) h += `<div class="sb-group">${esc(g.label)}</div>`;
+    pages.forEach(id => { const pg = C.pages[id]; const v = pg.unit ? pct(id) : 0;
+      h += `<a class="sb-link ${cur === id ? "active" : ""}" href="#${id}">${pg.unit ? `<span class="no">${pg.unit}</span>` : ""}<span class="nm">${esc(pg.nav)}${pg.unit && S.mode === "teacher" ? ` <span class="mins">${pg.minutes} 分</span>` : ""}</span>${pg.unit && v ? `<span class="pc ${v === 100 ? "ok" : ""}">${v === 100 ? "✓" : v + "%"}</span>` : ""}</a>`; });
+  });
+  $("#sidebar").innerHTML = h;
+}
+function renderToolbar() {
+  const o = order(), i = o.indexOf(cur);
+  const seg = (k, opts) => `<div class="seg">${opts.map(x => `<button class="${S[k] === x[0] ? "on" : ""}" data-act="${k}" data-v="${x[0]}">${x[1]}</button>`).join("")}</div>`;
+  $("#toolbar").innerHTML = `<button class="menubtn" data-act="menu" aria-label="開啟目錄">☰ 目錄</button><div class="crumb">${esc(C.pages[cur].crumb)}</div>
+    <div class="tgroup">AI ${seg("ai", [["chatgpt", "ChatGPT"], ["claude", "Claude"]])}</div>
+    <div class="tgroup">路線 ${seg("route", [["chat", "對話"], ["agent", "Agent"]])}</div>
+    <div class="tgroup">模式 ${seg("mode", [["student", "學員"], ["teacher", "講師"]])}</div>
+    <button class="navbtn" data-act="go" data-v="${o[i - 1] || ""}" ${i <= 0 ? "disabled" : ""}>← 上一頁</button>
+    <button class="navbtn primary" data-act="go" data-v="${o[i + 1] || ""}" ${i >= o.length - 1 ? "disabled" : ""}>下一頁 →</button>`;
+}
+function reqsHTML(pg) { return `<div class="reqs" id="reqs">${pg.reqs.map(r => `<span class="req ${S.done[r.id] ? "ok" : ""}">${S.done[r.id] ? "✓" : "○"} ${esc(r.label)}</span>`).join("")}</div>`; }
+function unitEndHTML(id) {
+  const pg = C.pages[id]; const left = pg.reqs.filter(r => !S.done[r.id]); const ups = unitPages(); const nx = ups[ups.indexOf(id) + 1];
+  const nextBtn = nx ? `<a class="btn navy" href="#${nx}">前往第 ${C.pages[nx].unit} 單元：${esc(C.pages[nx].nav)} →</a>` : `<a class="btn navy" href="#review">前往課後複習 →</a>`;
+  return `<div class="unit-end ${left.length ? "" : "done"}" id="unitEnd">${left.length ? `<h3>這個單元還差 ${left.length} 項</h3><p class="small">還沒完成：${left.map(r => "「" + esc(r.label) + "」").join("、")}。沒做完也可以先往下，之後再回來補。</p>`
+    : `<h3>這個單元完成了</h3><p class="small">做得好。可以進入下一單元，或按「重新練習」再做一次。</p>`}<div class="row mt">${nextBtn}<button class="btn" data-act="resetUnit">重新練習這個單元</button></div></div>`;
+}
+function renderHome() {
+  const pg = R(C.pages.home), h = pg.hero;
+  const statusOf = v => v === 0 ? "尚未開始" : v === 100 ? "完成" : "進行中";
+  return `<div class="lesson bare"><div class="home-hero"><div><div class="k">${esc(h.kicker)}</div><h1>${esc(h.title)}</h1><p>${esc(h.text)}</p>
+    <div class="row mt"><a class="btn teal" href="#u1">開始學習 →</a><a class="btn ghost" href="#prep">課前準備</a></div></div>
+    <div><div class="hero-ill"><div class="hero-raw"><b>${esc(h.rawTitle)}</b><div style="opacity:.8">${esc(h.rawSub)}</div><i style="width:70%;background:#8a6a4f"></i><i style="width:100%;background:#b5476b"></i><i style="width:85%;background:#c98a4b"></i><div style="opacity:.8">${esc(h.rawNote)}</div></div>
+    <span style="font-size:20px">→</span><div class="hero-done"><b>${esc(h.doneTitle)}</b><div class="hero-phone">${esc(h.phoneText)}</div><div style="opacity:.85">${esc(h.doneNote)}</div></div></div>
+    <p class="small" style="color:#cbd5e1;text-align:right;margin-top:8px">${esc(h.caption)}</p></div></div>
+    <div class="homesec"><h2>課程進度（共 ${C.totalMinutes} 分鐘）</h2><div class="grid4">${unitPages().map(id => { const u = C.pages[id], v = pct(id);
+      return `<a class="pcard" href="#${id}"><b>${u.unit}. ${esc(u.nav)}</b><div class="m">${u.minutes} 分鐘</div><div class="pbar"><i style="width:${v}%"></i></div><div class="m">${statusOf(v)}</div></a>`; }).join("")}</div></div>
+    <div class="homesec"><h2>學完你會做到</h2><div class="grid2">${pg.learn.map(c => `<div class="card"><h3>${esc(c.title)}</h3><ul class="list">${c.items.map(x => `<li>${x}</li>`).join("")}</ul></div>`).join("")}</div></div>
+    <div class="homesec"><h2>兩條實作路線</h2>${RENDER.routeCards({ selectable: false })}</div></div>`;
+}
+function renderPage() {
+  BLK = {}; COPY = []; detN = 0;
+  if (cur === "home") return renderHome();
+  const pg = R(C.pages[cur]);
+  let h = `<article class="lesson">`;
+  h += pg.unit ? `<div class="unit-tag"><span class="pill-navy">第 ${pg.unit} 單元</span>建議 ${pg.minutes} 分鐘</div>` : `<div class="unit-tag"><span class="pill-navy">${esc(pg.tag)}</span></div>`;
+  h += `<h1>${esc(pg.title)}</h1>${pg.lead ? `<p class="lead">${pg.lead}</p>` : ""}`;
+  if (pg.reqs) h += reqsHTML(pg);
+  h += blocks(pg.intro) + blocks(pg.blocks);
+  (pg.sections || []).forEach((s, i) => { h += `<section class="sec"><h2><span class="secno">${i + 1}</span>${s.title}</h2>${blocks(s.blocks)}</section>`; });
+  if (pg.unit) h += unitEndHTML(cur);
+  return h + `</article>`;
+}
+function chrome() {
+  renderSidebar();
+  const pg = C.pages[cur];
+  if (pg.reqs) { const r = $("#reqs"); if (r) r.outerHTML = reqsHTML(pg); const u = $("#unitEnd"); if (u) u.outerHTML = unitEndHTML(cur); }
+  if (cur === "u7" || cur === "home") { /* progress cards */ document.querySelectorAll(".grid4").forEach(() => {}); }
+  save();
+}
+function refresh(keepScroll) {
+  const y = window.scrollY; stopAll();
+  renderSidebar(); renderToolbar(); $("#content").innerHTML = renderPage(); save();
+  if (keepScroll) window.scrollTo(0, y);
+}
+function rb(id) {
+  const b = BLK[id]; if (!b) return refresh(true);
+  document.querySelectorAll(`[data-block="${CSS.escape(id)}"]`).forEach(el => { el.outerHTML = block(b); });
+}
+function route() {
+  let id = (location.hash || "#home").slice(1);
+  if (!C.pages[id]) id = "home";
+  if (id === "teacher" && S.mode !== "teacher") { location.replace("#review"); return; }
+  cur = id; document.body.classList.remove("menu-open"); refresh(false); window.scrollTo(0, 0);
+  document.title = (id === "home" ? "" : C.pages[id].crumb + "｜") + C.title;
+}
+
+/* ---------- 互動 ---------- */
+function checkReq(b) {
+  if (!b || !b.req) return;
+  const st = S.d[b.id];
+  let ok = false;
+  switch (b.t) {
+    case "toolcards": ok = st && st.seen.length >= b.items.length; break;
+    case "quiz": ok = st && Object.keys(st).length >= b.qs.length; break;
+    case "match": ok = st && Object.keys(st).length >= (b.reqMin || b.qs.length); break;
+    case "tabs": ok = st && st.seen.length >= (b.reqMin || 2); break;
+    case "stratSim": ok = st && st.tried.length >= (b.reqMin || 2); break;
+    case "arollSim": ok = st && st.seen.length >= (b.reqMin || 2); break;
+    case "steps": { const s2 = S.d[b.id + "." + P()] || {}; ok = b.items.every((x, i) => s2[i]); break; }
+    case "sentence": ok = st && Object.keys(st).length >= b.parts.length; break;
+    case "editPractice": ok = st && st.made.length >= (b.reqMin || 3); break;
+    case "publishCheck": { const s2 = S.d["u6.publish"] || {}; ok = C.publishChecks.every((x, i) => s2[i]); break; }
+    case "homework": ok = st && st.sel != null; break;
+  }
+  if (b.t === "publishCheck") setDone(b.req || "u6.publish", ok); else if (ok) setDone(b.req, true);
+}
+function blockReset(id) {
+  const b = BLK[id]; delete S.d[id]; if (T[id]) { clearInterval(T[id].timer); delete T[id]; }
+  if (b && b.req) setDone(b.req, false);
+}
+function togglePlay(id) {
+  const b = BLK[id]; const tm = T[id];
+  if (tm.playing) { clearInterval(tm.timer); tm.playing = false; rb(id); return; }
+  const total = b.t === "stratSim" ? b.total : arollModel(b, S.d[id].ver).total;
+  const speed = b.t === "stratSim" ? 2 : (b.speed || 1.5);
+  if (tm.t >= total) tm.t = 0;
+  tm.playing = true;
+  tm.timer = setInterval(() => { tm.t = Math.min(total, tm.t + 0.1 * speed); if (tm.t >= total) { clearInterval(tm.timer); tm.playing = false; } rb(id); }, 100);
+  rb(id);
+}
+const ACT = {
+  menu: () => document.body.classList.toggle("menu-open"),
+  go: el => { if (el.dataset.v) location.hash = "#" + el.dataset.v; },
+  ai: el => { S.ai = el.dataset.v; if (el.dataset.req) setDone(el.dataset.req, true); refresh(true); },
+  route: el => { S.route = el.dataset.v; if (cur === "u4") setDone("u4.pick", true); refresh(true); },
+  mode: el => { S.mode = el.dataset.v; if (S.mode !== "teacher" && cur === "teacher") { location.hash = "#review"; return; } refresh(true); },
+  copy: el => { copyText(COPY[+el.dataset.ci]); flashCopied(el); if (el.dataset.req) { setDone(el.dataset.req, true); chrome(); } },
+  toolcard: el => { const id = el.dataset.id, i = +el.dataset.i, st = S.d[id]; const k = st.open.indexOf(i); if (k >= 0) st.open.splice(k, 1); else { st.open.push(i); if (st.seen.indexOf(i) < 0) st.seen.push(i); } checkReq(BLK[id]); rb(id); chrome(); },
+  quiz: el => { const id = el.dataset.id, st = S.d[id]; if (st[el.dataset.q] !== undefined) return; st[el.dataset.q] = +el.dataset.o; checkReq(BLK[id]); rb(id); chrome(); },
+  match: el => { const id = el.dataset.id; S.d[id][el.dataset.q] = +el.dataset.o; checkReq(BLK[id]); rb(id); chrome(); },
+  resetBlock: el => { blockReset(el.dataset.id); rb(el.dataset.id); chrome(); },
+  tab: el => { const id = el.dataset.id, st = S.d[id], i = +el.dataset.i; st.cur = i; if (st.seen && st.seen.indexOf(i) < 0) st.seen.push(i); checkReq(BLK[id]); rb(id); chrome(); },
+  clip: el => { const id = el.dataset.id; S.d[id].clip = +el.dataset.i; rb(id); },
+  strat: el => { const id = el.dataset.id, st = S.d[id], i = +el.dataset.i; st.strat = i; if (st.tried.indexOf(i) < 0) st.tried.push(i); T[id].t = 0; checkReq(BLK[id]); rb(id); chrome(); },
+  ver: el => { const id = el.dataset.id, st = S.d[id], i = +el.dataset.i; st.ver = i; if (st.seen.indexOf(i) < 0) st.seen.push(i); clearInterval(T[id].timer); T[id].playing = false; T[id].t = 0; checkReq(BLK[id]); rb(id); chrome(); },
+  play: el => togglePlay(el.dataset.id),
+  gen: el => {
+    const g = genState(), k = el.dataset.k; let val = el.dataset.v;
+    if (k === "ai") { S.ai = val; } else if (k === "route") { S.route = val; }
+    else if (k === "mode") { g.mode = val; if (val === "multi" && !g.theme) g.theme = "染髮前後對比"; }
+    else if (k === "theme" || k === "style") { g[k] = g[k] === val ? null : val; }
+    else if (k === "len") { g.len = val === "custom" ? "custom" : +val; }
+    else if (k === "feat") { const i = g.feats.indexOf(val); if (i >= 0) g.feats.splice(i, 1); else g.feats.push(val); }
+    g.text = null; genFlash = { ai: "plat", route: "plat", mode: "mode", theme: "theme", style: "style", len: "length", feat: "feat" }[k];
+    setDone("u3.gen", true);
+    if (k === "ai" || k === "route") refresh(true); else { rb("u3.gen"); chrome(); }
+    setTimeout(() => { genFlash = null; }, 1200);
+  },
+  genView: el => { genState().view = el.dataset.v; rb("u3.gen"); save(); },
+  genRegen: () => { genState().text = null; rb("u3.gen"); save(); toast("已依選項重新產生"); },
+  genReset: () => { const v = genState().view; S.d["u3.gen"] = JSON.parse(JSON.stringify(Object.assign({ text: null, view: v }, G.defaults))); rb("u3.gen"); save(); },
+  copyGen: el => { copyText(genText()); flashCopied(el); setDone("u3.copy", true); setDone("u3.gen", true); chrome(); },
+  gotoGenAroll: () => { const g = genState(); g.mode = "aroll"; g.text = null; setDone("ub.gen", true); save(); location.hash = "#u3"; },
+  check: el => { const id = el.dataset.id, st = D(id, {}), i = el.dataset.i; if (st[i]) delete st[i]; else st[i] = true; rb(id); chrome(); },
+  step: el => { const id = el.dataset.id, st = D(id + "." + P(), {}), i = el.dataset.i; if (st[i]) delete st[i]; else st[i] = true; checkReq(BLK[id]); rb(id); chrome(); },
+  pub: el => { const st = D("u6.publish", {}), i = el.dataset.i; if (st[i]) delete st[i]; else st[i] = true; checkReq(BLK[el.dataset.id] || { t: "publishCheck", req: "u6.publish" }); setDone("u6.publish", C.publishChecks.every((x, k) => st[k])); rb(el.dataset.id); chrome(); },
+  pubClear: el => { S.d["u6.publish"] = {}; setDone("u6.publish", false); rb(el.dataset.id); chrome(); },
+  trouble: el => { const id = el.dataset.id; S.d[id].sel = +el.dataset.i; rb(id); save(); },
+  sent: el => { const id = el.dataset.id; S.d[id][el.dataset.i] = true; checkReq(BLK[id]); rb(id); chrome(); },
+  prob: el => { const id = el.dataset.id, st = S.d[id], i = +el.dataset.i; st.cur = i; if (st.made.indexOf(i) < 0) st.made.push(i); checkReq(BLK[id]); rb(id); chrome(); },
+  param: el => { const id = el.dataset.id, st = S.d[id]; const p = C.editPractice.problems[st.cur]; const sel = st.sel[st.cur] || p.params.map(() => 0); sel[+el.dataset.k] = +el.dataset.j; st.sel[st.cur] = sel; rb(id); save(); },
+  hw: el => { const id = el.dataset.id; S.d[id].sel = +el.dataset.i; checkReq(BLK[id]); rb(id); chrome(); },
+  tpl: el => { D("review.tpl", {}).p = el.dataset.v; rb("review.tabs"); save(); },
+  resetUnit: () => {
+    const pre = cur + "."; Object.keys(S.d).forEach(k => { if (k.startsWith(pre)) delete S.d[k]; }); Object.keys(S.done).forEach(k => { if (k.startsWith(pre)) delete S.done[k]; });
+    Object.keys(T).forEach(k => { if (k.startsWith(pre)) { clearInterval(T[k].timer); delete T[k]; } });
+    refresh(false); window.scrollTo(0, 0); toast("已重設這個單元");
+  }
+};
+function flashCopied(el) { const l = el.dataset.label || el.textContent; el.textContent = "已複製 ✓"; toast("已複製到剪貼簿"); setTimeout(() => { if (el.isConnected) el.textContent = l; }, 1300); }
+
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]"); if (!el) { if (e.target.id === "overlay") document.body.classList.remove("menu-open"); return; }
+  const f = ACT[el.dataset.act]; if (f) { e.preventDefault(); f(el, e); }
+});
+document.addEventListener("input", e => {
+  const k = e.target.dataset && e.target.dataset.inp; if (!k) return;
+  const g = genState();
+  if (k === "genText") { g.text = e.target.value; setDone("u3.gen", true); const q = $("#genQual"); if (q) q.innerHTML = qualHTML(g.text, g.mode); chrome(); }
+  if (k === "genCustom") { g.custom = e.target.value; g.text = null; setDone("u3.gen", true); save(); }
+});
+document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.inp === "genCustom") { rb("u3.gen"); chrome(); } });
+document.addEventListener("toggle", e => { const d = e.target; if (d.dataset && d.dataset.det) { if (d.open) DET.add(d.dataset.det); else DET.delete(d.dataset.det); } }, true);
+$("#overlay").addEventListener("click", () => document.body.classList.remove("menu-open"));
+$("#sidebar").addEventListener("click", e => { if (e.target.closest("a")) document.body.classList.remove("menu-open"); });
+window.addEventListener("hashchange", route);
+window.__course = { S, refresh, P };   /* 給測試用 */
+route();
+})();
+</script>
+</body>
+</html>
